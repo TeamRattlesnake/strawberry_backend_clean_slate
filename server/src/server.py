@@ -11,13 +11,16 @@ from fastapi.openapi.utils import get_openapi
 
 from models import OperationResult, GenerateQueryModel, GenerateResultModel, FeedbackModel
 from config import Config
+from database import Database, DBException
 from utils import is_valid, parse_query_string
 
 logging.basicConfig(format="%(asctime)s %(message)s", handlers=[logging.FileHandler(
-    f"/home/logs/log_{time.ctime()}.txt", mode="w", encoding="UTF-8")], datefmt="%H:%M:%S %z", level=logging.INFO)
+    f"/home/logs/log_{time.ctime()}.txt", mode="w", encoding="UTF-8")], datefmt="%H:%M:%S", level=logging.INFO)
 
 app = FastAPI()
 config = Config("config.json")
+db = Database(config .db_user, config .db_password,
+              config .db_name, config .db_port, config.db_host)
 
 origins = [
     "*",
@@ -58,6 +61,21 @@ def custom_openapi():
 app.openapi = custom_openapi
 
 
+@app.on_event("startup")
+def startup():
+    """
+    При старте сервера проверить, нужна ли миграция и сделать ее, если да
+    """
+    logging.info("Server started")
+    try:
+        if db.need_migration():
+            logging.info("Creating tables...")
+            db.migrate()
+            logging.info("Creating tables...\tOK")
+    except DBException as exc:
+        logging.error(f"Error while checking tables: {exc}")
+
+
 @app.post('/send_feedback', response_model=OperationResult)
 async def send_feedback(data: FeedbackModel, Authorization=Header()):
     """
@@ -66,12 +84,17 @@ async def send_feedback(data: FeedbackModel, Authorization=Header()):
     auth_data = parse_query_string(Authorization)
 
     if not is_valid(query=auth_data, secret=config.client_secret):
-        return OperationResult(code=1, message="Ошибка авторизации")
+        return OperationResult(code=1, message="Authorization error")
 
     result_id = data.result_id
     score = data.score
-
-    return OperationResult(code=5, message="Метод пока не реализован")
+    logging.info(f"/send_feedback\tresult_id={result_id}; score={score}")
+    try:
+        db.change_rating(result_id, score)
+        return OperationResult(code=0, message="Score updated")
+    except DBException as exc:
+        logging.error(f"Error while checking tables: {exc}")
+    logging.info(f"/send_feedback\tresult_id={result_id}; score={score}\tOK")
 
 
 @app.post("/generate_text", response_model=GenerateResultModel)
