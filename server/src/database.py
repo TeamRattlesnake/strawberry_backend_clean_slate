@@ -7,6 +7,9 @@ from sqlalchemy import create_engine, Table, Column, Integer, DateTime, MetaData
 
 
 class DBException(Exception):
+    """
+    Класс исключения, связанного с базой данных
+    """
     pass
 
 
@@ -62,7 +65,8 @@ class Database():
             with self.engine.connect() as connection:
                 get_rating_query = select(self.generated_data.c.rating).where(
                     self.generated_data.c.id == id)
-                rating = int(connection.execute(get_rating_query).fetchall()[0][0])
+                rating = int(connection.execute(
+                    get_rating_query).fetchall()[0][0])
 
                 update_query = update(self.generated_data).where(
                     self.generated_data.c.id == text_id).values(rating=rating+score)

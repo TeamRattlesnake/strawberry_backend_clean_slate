@@ -13,14 +13,15 @@ from models import OperationResult, GenerateQueryModel, GenerateResultModel, Fee
 from config import Config
 from database import Database, DBException
 from utils import is_valid, parse_query_string
+from nn_api import NNException, GenApi, AppendApi, RephraseApi, SummarizeApi, ExtendApi, UnmaskApi
 
 logging.basicConfig(format="%(asctime)s %(message)s", handlers=[logging.FileHandler(
     f"/home/logs/log_{time.ctime()}.txt", mode="w", encoding="UTF-8")], datefmt="%H:%M:%S", level=logging.INFO)
 
 app = FastAPI()
 config = Config("config.json")
-db = Database(config .db_user, config .db_password,
-              config .db_name, config .db_port, config.db_host)
+db = Database(config.db_user, config.db_password,
+              config.db_name, config.db_port, config.db_host)
 
 origins = [
     "*",
@@ -74,6 +75,7 @@ def startup():
             logging.info("Creating tables...\tOK")
     except DBException as exc:
         logging.error(f"Error while checking tables: {exc}")
+        raise Exception("Error! Restarting...")
 
 
 @app.post('/send_feedback', response_model=OperationResult)
@@ -91,10 +93,12 @@ async def send_feedback(data: FeedbackModel, Authorization=Header()):
     logging.info(f"/send_feedback\tresult_id={result_id}; score={score}")
     try:
         db.change_rating(result_id, score)
+        logging.info(
+            f"/send_feedback\tresult_id={result_id}; score={score}\tOK")
         return OperationResult(code=0, message="Score updated")
     except DBException as exc:
         logging.error(f"Error while checking tables: {exc}")
-    logging.info(f"/send_feedback\tresult_id={result_id}; score={score}\tOK")
+        return OperationResult(code=6, message="Database error")
 
 
 @app.post("/generate_text", response_model=GenerateResultModel)
@@ -106,15 +110,25 @@ async def generate_text(data: GenerateQueryModel, Authorization=Header()):
     auth_data = parse_query_string(Authorization)
 
     if not is_valid(query=auth_data, secret=config.client_secret):
-        return GenerateResultModel(status=OperationResult(code=1, message="Ошибка авторизации"), text_data="", result_id=-1)
+        return GenerateResultModel(status=OperationResult(code=1, message="Authorization error"), text_data="", result_id=-1)
 
     texts = data.context_data
     hint = data.hint
 
-    result = "Outaspace to find another race"
-    result_id = 0
-
-    return GenerateResultModel(status=OperationResult(code=5, message="Метод пока не реализован"), text_data=result, result_id=result_id)
+    try:
+        api = GenApi()
+        api.load_context(config.gen_context_path)
+        api.prepate_query(texts, hint)
+        api.send_request()
+        result = api.get_result()
+        result_id = db.add_generated_data(result)
+        return GenerateResultModel(status=OperationResult(code=0, message="Text generated"), text_data=result, result_id=result_id)
+    except NNException as exc:
+        logging.error(f"Error in NN API while generating text: {exc}")
+        return GenerateResultModel(status=OperationResult(code=2, message="NN api error"), text_data="", result_id=-1)
+    except DBException as exc:
+        logging.error(f"Error in database while generating text: {exc}")
+        return GenerateResultModel(status=OperationResult(code=6, message="Database error"), text_data="", result_id=-1)
 
 
 @app.post("/append_text", response_model=GenerateResultModel)
@@ -131,10 +145,20 @@ async def append_text(data: GenerateQueryModel, Authorization=Header()):
     texts = data.context_data
     hint = data.hint
 
-    result = "Outaspace to find another race"
-    result_id = 0
-
-    return GenerateResultModel(status=OperationResult(code=5, message="Метод пока не реализован"), text_data=result, result_id=result_id)
+    try:
+        api = AppendApi()
+        api.load_context(config.append_context_path)
+        api.prepate_query(texts, hint)
+        api.send_request()
+        result = api.get_result()
+        result_id = db.add_generated_data(result)
+        return GenerateResultModel(status=OperationResult(code=0, message="Text appended"), text_data=result, result_id=result_id)
+    except NNException as exc:
+        logging.error(f"Error in NN API while generating text: {exc}")
+        return GenerateResultModel(status=OperationResult(code=2, message="NN api error"), text_data="", result_id=-1)
+    except DBException as exc:
+        logging.error(f"Error in database while generating text: {exc}")
+        return GenerateResultModel(status=OperationResult(code=6, message="Database error"), text_data="", result_id=-1)
 
 
 @app.post("/rephrase_text", response_model=GenerateResultModel)
@@ -151,10 +175,20 @@ async def rephrase_text(data: GenerateQueryModel, Authorization=Header()):
     texts = data.context_data
     hint = data.hint
 
-    result = "Outaspace to find another race"
-    result_id = 0
-
-    return GenerateResultModel(status=OperationResult(code=5, message="Метод пока не реализован"), text_data=result, result_id=result_id)
+    try:
+        api = RephraseApi()
+        api.load_context(config.rephrase_context_path)
+        api.prepate_query(texts, hint)
+        api.send_request()
+        result = api.get_result()
+        result_id = db.add_generated_data(result)
+        return GenerateResultModel(status=OperationResult(code=0, message="Text rephrased"), text_data=result, result_id=result_id)
+    except NNException as exc:
+        logging.error(f"Error in NN API while generating text: {exc}")
+        return GenerateResultModel(status=OperationResult(code=2, message="NN api error"), text_data="", result_id=-1)
+    except DBException as exc:
+        logging.error(f"Error in database while generating text: {exc}")
+        return GenerateResultModel(status=OperationResult(code=6, message="Database error"), text_data="", result_id=-1)
 
 
 @app.post("/summarize_text", response_model=GenerateResultModel)
@@ -171,10 +205,20 @@ async def summarize_text(data: GenerateQueryModel, Authorization=Header()):
     texts = data.context_data
     hint = data.hint
 
-    result = "Outaspace to find another race"
-    result_id = 0
-
-    return GenerateResultModel(status=OperationResult(code=5, message="Метод пока не реализован"), text_data=result, result_id=result_id)
+    try:
+        api = SummarizeApi()
+        api.load_context(config.summarize_context_path)
+        api.prepate_query(texts, hint)
+        api.send_request()
+        result = api.get_result()
+        result_id = db.add_generated_data(result)
+        return GenerateResultModel(status=OperationResult(code=0, message="Text summarized"), text_data=result, result_id=result_id)
+    except NNException as exc:
+        logging.error(f"Error in NN API while generating text: {exc}")
+        return GenerateResultModel(status=OperationResult(code=2, message="NN api error"), text_data="", result_id=-1)
+    except DBException as exc:
+        logging.error(f"Error in database while generating text: {exc}")
+        return GenerateResultModel(status=OperationResult(code=6, message="Database error"), text_data="", result_id=-1)
 
 
 @app.post("/extend_text", response_model=GenerateResultModel)
@@ -191,10 +235,20 @@ async def extend_text(data: GenerateQueryModel, Authorization=Header()):
     texts = data.context_data
     hint = data.hint
 
-    result = "Outaspace to find another race"
-    result_id = 0
-
-    return GenerateResultModel(status=OperationResult(code=5, message="Метод пока не реализован"), text_data=result, result_id=result_id)
+    try:
+        api = ExtendApi()
+        api.load_context(config.extend_context_path)
+        api.prepate_query(texts, hint)
+        api.send_request()
+        result = api.get_result()
+        result_id = db.add_generated_data(result)
+        return GenerateResultModel(status=OperationResult(code=0, message="Text extended"), text_data=result, result_id=result_id)
+    except NNException as exc:
+        logging.error(f"Error in NN API while generating text: {exc}")
+        return GenerateResultModel(status=OperationResult(code=2, message="NN api error"), text_data="", result_id=-1)
+    except DBException as exc:
+        logging.error(f"Error in database while generating text: {exc}")
+        return GenerateResultModel(status=OperationResult(code=6, message="Database error"), text_data="", result_id=-1)
 
 
 @app.post("/unmask_text", response_model=GenerateResultModel)
@@ -211,7 +265,17 @@ async def unmask_text(data: GenerateQueryModel, Authorization=Header()):
     texts = data.context_data
     hint = data.hint
 
-    result = "Outaspace to find another race"
-    result_id = 0
-
-    return GenerateResultModel(status=OperationResult(code=5, message="Метод пока не реализован"), text_data=result, result_id=result_id)
+    try:
+        api = UnmaskApi()
+        api.load_context(config.unmask_context_path)
+        api.prepate_query(texts, hint)
+        api.send_request()
+        result = api.get_result()
+        result_id = db.add_generated_data(result)
+        return GenerateResultModel(status=OperationResult(code=0, message="Text unmasked"), text_data=result, result_id=result_id)
+    except NNException as exc:
+        logging.error(f"Error in NN API while generating text: {exc}")
+        return GenerateResultModel(status=OperationResult(code=2, message="NN api error"), text_data="", result_id=-1)
+    except DBException as exc:
+        logging.error(f"Error in database while generating text: {exc}")
+        return GenerateResultModel(status=OperationResult(code=6, message="Database error"), text_data="", result_id=-1)

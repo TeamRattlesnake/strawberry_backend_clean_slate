@@ -15,6 +15,7 @@ class OperationResult(BaseModel):
     * 3 - request error
     * 4 - unknown error
     * 5 - not implemented
+    * 6 - db error
     """
     code: int
     message: str
