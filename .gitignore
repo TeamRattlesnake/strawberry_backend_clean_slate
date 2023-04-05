@@ -1,0 +1,3 @@
+mariadb*
+logs/log*
+server/config.json
