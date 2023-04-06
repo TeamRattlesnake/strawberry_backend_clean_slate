@@ -30,3 +30,15 @@ class Config:
         self.unmask_context_path = data["unmask_context_path"]
 
         self.api_tokens = data["api_tokens"]
+
+        if len(self.api_tokens):
+            raise Exception("No api tokens in config file")
+
+        self.__ind = 0
+
+    def next_token(self) -> str:
+        if self.__ind == len(self.api_tokens) - 1:
+            self.__ind = 0
+            return self.api_tokens[-1]
+        self.api_tokens += 1
+        return self.api_tokens[self.__ind]

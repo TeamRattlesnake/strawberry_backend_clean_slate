@@ -3,7 +3,7 @@
 """
 
 import datetime
-from sqlalchemy import create_engine, Table, Column, Integer, DateTime, MetaData, ForeignKey, inspect, select, update, insert
+from sqlalchemy import create_engine, Table, Column, Integer, DateTime, MetaData, inspect, select, update, insert
 
 
 class DBException(Exception):
@@ -64,7 +64,7 @@ class Database():
         try:
             with self.engine.connect() as connection:
                 get_rating_query = select(self.generated_data.c.rating).where(
-                    self.generated_data.c.id == id)
+                    self.generated_data.c.id == text_id)
                 rating = int(connection.execute(
                     get_rating_query).fetchall()[0][0])
 
