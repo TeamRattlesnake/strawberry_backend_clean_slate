@@ -43,8 +43,7 @@ class NNApi:
     def send_request(self):
         try:
             for data in self.chatbot.ask(self.query):
-                result = data["message"]
-            return result
+                self.result = data["message"]
         except Exception as exc:
             raise NNException(f"Error in send_request: {exc}") from exc
 
