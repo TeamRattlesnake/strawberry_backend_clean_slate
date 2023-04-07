@@ -26,8 +26,7 @@ def is_valid(*, query: dict, secret: str) -> bool:
             vk_subset, doseq=True).encode(), sha256).digest())
         decoded_hash_code = hash_code.decode(
             'utf-8')[:-1].replace('+', '-').replace('/', '_')
-        # return query["sign"] == decoded_hash_code
-        return True  # Временная мера чтобы я потестил
+        return query["sign"] == decoded_hash_code
     except Exception as exc:
         raise UtilsException(f"Error in is_valid: {exc}") from exc
 
