@@ -12,7 +12,7 @@ from fastapi.openapi.utils import get_openapi
 from models import OperationResult, GenerateQueryModel, GenerateResultModel, FeedbackModel
 from config import Config
 from database import Database, DBException
-from utils import is_valid, parse_query_string
+from utils import is_valid, parse_query_string, UtilsException
 from nn_api import NNException, NNApi
 
 logging.basicConfig(format="%(asctime)s %(message)s", handlers=[logging.FileHandler(
@@ -86,21 +86,27 @@ async def send_feedback(data: FeedbackModel, Authorization=Header()):
     """
     Оценить результат по айди
     """
-    auth_data = parse_query_string(Authorization)
 
-    if not is_valid(query=auth_data, secret=config.client_secret):
-        return OperationResult(code=1, message="Authorization error")
+    try:
+        auth_data = parse_query_string(Authorization)
+        if not is_valid(query=auth_data, secret=config.client_secret):
+            return OperationResult(code=1, message="Authorization error")
+    except UtilsException as exc:
+        logging.error(
+            f"Error in utils, probably the request was not correct: {exc}")
+        return OperationResult(code=3, message="Request error. Maybe it was not correct")
 
     result_id = data.result_id
     score = data.score
     logging.info(f"/send_feedback\tresult_id={result_id}; score={score}")
+
     try:
         db.change_rating(result_id, score)
         logging.info(
             f"/send_feedback\tresult_id={result_id}; score={score}\tOK")
         return OperationResult(code=0, message="Score updated")
     except DBException as exc:
-        logging.error(f"Error while checking tables: {exc}")
+        logging.error(f"Error in database: {exc}")
         return OperationResult(code=6, message="Database error")
 
 
@@ -110,18 +116,25 @@ async def generate_text(data: GenerateQueryModel, Authorization=Header()):
     Пишет целый пост по текстовому описанию
     """
 
-    auth_data = parse_query_string(Authorization)
-
-    if not is_valid(query=auth_data, secret=config.client_secret):
-        return GenerateResultModel(status=OperationResult(code=1, message="Authorization error"), text_data="", result_id=-1)
+    try:
+        auth_data = parse_query_string(Authorization)
+        if not is_valid(query=auth_data, secret=config.client_secret):
+            return OperationResult(code=1, message="Authorization error")
+    except UtilsException as exc:
+        logging.error(
+            f"Error in utils, probably the request was not correct: {exc}")
+        return OperationResult(code=3, message="Request error. Maybe it was not correct")
 
     texts = data.context_data
     hint = data.hint
     logging.info(f"/generate_text\tlen(texts)={len(texts)}; hint={hint}")
+
     try:
         api = NNApi(config.next_token())
         api.load_context(config.gen_context_path)
         api.prepare_query(texts, hint)
+        logging.info(
+            f"Ready to send request to ChatGPT with token={api.token}; query={api.query}")
         api.send_request()
         result = api.get_result()
         result_id = db.add_generated_data(hint, result)
@@ -142,18 +155,25 @@ async def append_text(data: GenerateQueryModel, Authorization=Header()):
     Добавляет несколько слов к затравке и возвращает все вместе
     """
 
-    auth_data = parse_query_string(Authorization)
-
-    if not is_valid(query=auth_data, secret=config.client_secret):
-        return GenerateResultModel(status=OperationResult(code=1, message="Ошибка авторизации"), text_data="", result_id=-1)
+    try:
+        auth_data = parse_query_string(Authorization)
+        if not is_valid(query=auth_data, secret=config.client_secret):
+            return OperationResult(code=1, message="Authorization error")
+    except UtilsException as exc:
+        logging.error(
+            f"Error in utils, probably the request was not correct: {exc}")
+        return OperationResult(code=3, message="Request error. Maybe it was not correct")
 
     texts = data.context_data
     hint = data.hint
     logging.info(f"/append_text\tlen(texts)={len(texts)}; hint={hint}")
+
     try:
         api = NNApi(config.next_token())
         api.load_context(config.append_context_path)
         api.prepare_query(texts, hint)
+        logging.info(
+            f"Ready to send request to ChatGPT with token={api.token}; query={api.query}")
         api.send_request()
         result = api.get_result()
         result_id = db.add_generated_data(hint, result)
@@ -173,18 +193,25 @@ async def rephrase_text(data: GenerateQueryModel, Authorization=Header()):
     Перефразирует поданный текст
     """
 
-    auth_data = parse_query_string(Authorization)
-
-    if not is_valid(query=auth_data, secret=config.client_secret):
-        return GenerateResultModel(status=OperationResult(code=1, message="Ошибка авторизации"), text_data="", result_id=-1)
+    try:
+        auth_data = parse_query_string(Authorization)
+        if not is_valid(query=auth_data, secret=config.client_secret):
+            return OperationResult(code=1, message="Authorization error")
+    except UtilsException as exc:
+        logging.error(
+            f"Error in utils, probably the request was not correct: {exc}")
+        return OperationResult(code=3, message="Request error. Maybe it was not correct")
 
     texts = data.context_data
     hint = data.hint
     logging.info(f"/rephrase_text\tlen(texts)={len(texts)}; hint={hint}")
+
     try:
         api = NNApi(config.next_token())
         api.load_context(config.rephrase_context_path)
         api.prepare_query(texts, hint)
+        logging.info(
+            f"Ready to send request to ChatGPT with token={api.token}; query={api.query}")
         api.send_request()
         result = api.get_result()
         result_id = db.add_generated_data(hint, result)
@@ -205,18 +232,25 @@ async def summarize_text(data: GenerateQueryModel, Authorization=Header()):
     Резюмирует поданный текст
     """
 
-    auth_data = parse_query_string(Authorization)
-
-    if not is_valid(query=auth_data, secret=config.client_secret):
-        return GenerateResultModel(status=OperationResult(code=1, message="Ошибка авторизации"), text_data="", result_id=-1)
+    try:
+        auth_data = parse_query_string(Authorization)
+        if not is_valid(query=auth_data, secret=config.client_secret):
+            return OperationResult(code=1, message="Authorization error")
+    except UtilsException as exc:
+        logging.error(
+            f"Error in utils, probably the request was not correct: {exc}")
+        return OperationResult(code=3, message="Request error. Maybe it was not correct")
 
     texts = data.context_data
     hint = data.hint
     logging.info(f"/summarize_text\tlen(texts)={len(texts)}; hint={hint}")
+
     try:
         api = NNApi(config.next_token())
         api.load_context(config.summarize_context_path)
         api.prepare_query(texts, hint)
+        logging.info(
+            f"Ready to send request to ChatGPT with token={api.token}; query={api.query}")
         api.send_request()
         result = api.get_result()
         result_id = db.add_generated_data(hint, result)
@@ -237,18 +271,25 @@ async def extend_text(data: GenerateQueryModel, Authorization=Header()):
     Удлиняет поданный текст
     """
 
-    auth_data = parse_query_string(Authorization)
-
-    if not is_valid(query=auth_data, secret=config.client_secret):
-        return GenerateResultModel(status=OperationResult(code=1, message="Ошибка авторизации"), text_data="", result_id=-1)
+    try:
+        auth_data = parse_query_string(Authorization)
+        if not is_valid(query=auth_data, secret=config.client_secret):
+            return OperationResult(code=1, message="Authorization error")
+    except UtilsException as exc:
+        logging.error(
+            f"Error in utils, probably the request was not correct: {exc}")
+        return OperationResult(code=3, message="Request error. Maybe it was not correct")
 
     texts = data.context_data
     hint = data.hint
     logging.info(f"/extend_text\tlen(texts)={len(texts)}; hint={hint}")
+
     try:
         api = NNApi(config.next_token())
         api.load_context(config.extend_context_path)
         api.prepare_query(texts, hint)
+        logging.info(
+            f"Ready to send request to ChatGPT with token={api.token}; query={api.query}")
         api.send_request()
         result = api.get_result()
         result_id = db.add_generated_data(hint, result)
@@ -268,18 +309,25 @@ async def unmask_text(data: GenerateQueryModel, Authorization=Header()):
     Заменяет [MASK] на наиболее подходящие слова
     """
 
-    auth_data = parse_query_string(Authorization)
-
-    if not is_valid(query=auth_data, secret=config.client_secret):
-        return GenerateResultModel(status=OperationResult(code=1, message="Ошибка авторизации"), text_data="", result_id=-1)
+    try:
+        auth_data = parse_query_string(Authorization)
+        if not is_valid(query=auth_data, secret=config.client_secret):
+            return OperationResult(code=1, message="Authorization error")
+    except UtilsException as exc:
+        logging.error(
+            f"Error in utils, probably the request was not correct: {exc}")
+        return OperationResult(code=3, message="Request error. Maybe it was not correct")
 
     texts = data.context_data
     hint = data.hint
     logging.info(f"/unmask_text\tlen(texts)={len(texts)}; hint={hint}")
+
     try:
         api = NNApi(config.next_token())
         api.load_context(config.unmask_context_path)
         api.prepare_query(texts, hint)
+        logging.info(
+            f"Ready to send request to ChatGPT with token={api.token}; query={api.query}")
         api.send_request()
         result = api.get_result()
         result_id = db.add_generated_data(hint, result)
