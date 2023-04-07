@@ -13,10 +13,10 @@ from models import OperationResult, GenerateQueryModel, GenerateResultModel, Fee
 from config import Config
 from database import Database, DBException
 from utils import is_valid, parse_query_string
-from nn_api import NNException, GenApi, AppendApi, RephraseApi, SummarizeApi, ExtendApi, UnmaskApi
+from nn_api import NNException, NNApi
 
 logging.basicConfig(format="%(asctime)s %(message)s", handlers=[logging.FileHandler(
-    f"/home/logs/log_{time.ctime()}.txt", mode="w", encoding="UTF-8")], datefmt="%H:%M:%S", level=logging.INFO)
+    f"/home/logs/log_{time.ctime()}.txt", mode="w", encoding="UTF-8")], datefmt="%H:%M:%S UTC", level=logging.INFO)
 
 app = FastAPI()
 config = Config("config.json")
@@ -54,7 +54,7 @@ def custom_openapi():
         return app.openapi_schema
     openapi_schema = get_openapi(
         title="Strawberry🍓",
-        version="0.0.1 - Clean Slate",
+        version="0.5.0 - Clean Slate",
         description=DESCRIPTION,
         routes=app.routes,
     )
@@ -119,12 +119,12 @@ async def generate_text(data: GenerateQueryModel, Authorization=Header()):
     hint = data.hint
     logging.info(f"/generate_text\tlen(texts)={len(texts)}; hint={hint}")
     try:
-        api = GenApi(config.next_token())
+        api = NNApi(config.next_token())
         api.load_context(config.gen_context_path)
         api.prepare_query(texts, hint)
         api.send_request()
         result = api.get_result()
-        result_id = db.add_generated_data(result)
+        result_id = db.add_generated_data(hint, result)
         logging.info(
             f"/generate_text\tlen(texts)={len(texts)}; hint={hint}\tOK")
         return GenerateResultModel(status=OperationResult(code=0, message="Text generated"), text_data=result, result_id=result_id)
@@ -151,12 +151,12 @@ async def append_text(data: GenerateQueryModel, Authorization=Header()):
     hint = data.hint
     logging.info(f"/append_text\tlen(texts)={len(texts)}; hint={hint}")
     try:
-        api = AppendApi(config.next_token())
+        api = NNApi(config.next_token())
         api.load_context(config.append_context_path)
         api.prepare_query(texts, hint)
         api.send_request()
         result = api.get_result()
-        result_id = db.add_generated_data(result)
+        result_id = db.add_generated_data(hint, result)
         logging.info(f"/append_text\tlen(texts)={len(texts)}; hint={hint}\tOK")
         return GenerateResultModel(status=OperationResult(code=0, message="Text appended"), text_data=result, result_id=result_id)
     except NNException as exc:
@@ -182,12 +182,12 @@ async def rephrase_text(data: GenerateQueryModel, Authorization=Header()):
     hint = data.hint
     logging.info(f"/rephrase_text\tlen(texts)={len(texts)}; hint={hint}")
     try:
-        api = RephraseApi(config.next_token())
+        api = NNApi(config.next_token())
         api.load_context(config.rephrase_context_path)
         api.prepare_query(texts, hint)
         api.send_request()
         result = api.get_result()
-        result_id = db.add_generated_data(result)
+        result_id = db.add_generated_data(hint, result)
         logging.info(
             f"/rephrase_text\tlen(texts)={len(texts)}; hint={hint}\tOK")
         return GenerateResultModel(status=OperationResult(code=0, message="Text rephrased"), text_data=result, result_id=result_id)
@@ -214,12 +214,12 @@ async def summarize_text(data: GenerateQueryModel, Authorization=Header()):
     hint = data.hint
     logging.info(f"/summarize_text\tlen(texts)={len(texts)}; hint={hint}")
     try:
-        api = SummarizeApi(config.next_token())
+        api = NNApi(config.next_token())
         api.load_context(config.summarize_context_path)
         api.prepare_query(texts, hint)
         api.send_request()
         result = api.get_result()
-        result_id = db.add_generated_data(result)
+        result_id = db.add_generated_data(hint, result)
         logging.info(
             f"/summarize_text\tlen(texts)={len(texts)}; hint={hint}\tOK")
         return GenerateResultModel(status=OperationResult(code=0, message="Text summarized"), text_data=result, result_id=result_id)
@@ -246,12 +246,12 @@ async def extend_text(data: GenerateQueryModel, Authorization=Header()):
     hint = data.hint
     logging.info(f"/extend_text\tlen(texts)={len(texts)}; hint={hint}")
     try:
-        api = ExtendApi(config.next_token())
+        api = NNApi(config.next_token())
         api.load_context(config.extend_context_path)
         api.prepare_query(texts, hint)
         api.send_request()
         result = api.get_result()
-        result_id = db.add_generated_data(result)
+        result_id = db.add_generated_data(hint, result)
         logging.info(f"/extend_text\tlen(texts)={len(texts)}; hint={hint}\tOK")
         return GenerateResultModel(status=OperationResult(code=0, message="Text extended"), text_data=result, result_id=result_id)
     except NNException as exc:
@@ -277,12 +277,12 @@ async def unmask_text(data: GenerateQueryModel, Authorization=Header()):
     hint = data.hint
     logging.info(f"/unmask_text\tlen(texts)={len(texts)}; hint={hint}")
     try:
-        api = UnmaskApi(config.next_token())
+        api = NNApi(config.next_token())
         api.load_context(config.unmask_context_path)
         api.prepare_query(texts, hint)
         api.send_request()
         result = api.get_result()
-        result_id = db.add_generated_data(result)
+        result_id = db.add_generated_data(hint, result)
         logging.info(f"/unmask_text\tlen(texts)={len(texts)}; hint={hint}\tOK")
         return GenerateResultModel(status=OperationResult(code=0, message="Text unmasked"), text_data=result, result_id=result_id)
     except NNException as exc:

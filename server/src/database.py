@@ -3,7 +3,7 @@
 """
 
 import datetime
-from sqlalchemy import create_engine, Table, Column, Integer, DateTime, MetaData, inspect, select, update, insert
+from sqlalchemy import create_engine, Table, Column, String, Integer, DateTime, MetaData, inspect, select, update, insert
 
 
 class DBException(Exception):
@@ -25,7 +25,8 @@ class Database():
             "generated_data",
             self.meta,
             Column("id", Integer, primary_key=True, nullable=False),
-            Column("text", Integer, nullable=False),
+            Column("query", String, nullable=False),
+            Column("text", String, nullable=False),
             Column("rating", Integer, nullable=False, default=0),
             Column("date", DateTime(timezone=True),
                    default=datetime.datetime.utcnow, nullable=False),
@@ -45,10 +46,11 @@ class Database():
         except Exception as exc:
             raise DBException(f"Error in migrate: {exc}") from exc
 
-    def add_generated_data(self, text: str) -> int:
+    def add_generated_data(self, query: str, text: str,) -> int:
         try:
             with self.engine.connect() as connection:
-                insert_query = insert(self.generated_data).values(text=text)
+                insert_query = insert(self.generated_data).values(
+                    query=query, text=text)
                 connection.execute(insert_query)
 
                 get_id_query = select(self.generated_data.c.id).where(
@@ -60,7 +62,7 @@ class Database():
         except Exception as exc:
             raise DBException(f"Error in add_generated_data: {exc}") from exc
 
-    def change_rating(self, text_id: int, score: int):
+    def change_rating(self, text_id: int, score_delta: int):
         try:
             with self.engine.connect() as connection:
                 get_rating_query = select(self.generated_data.c.rating).where(
@@ -69,7 +71,7 @@ class Database():
                     get_rating_query).fetchall()[0][0])
 
                 update_query = update(self.generated_data).where(
-                    self.generated_data.c.id == text_id).values(rating=rating+score)
+                    self.generated_data.c.id == text_id).values(rating=rating+score_delta)
                 connection.execute(update_query)
         except Exception as exc:
             raise DBException(f"Error in change_rating: {exc}") from exc

@@ -1,0 +1,2 @@
+Hello, ChatGPT. I need you to paraphrase some text. You need to answer to me only in language of the source text. It is prohibited to use other languages. It is strongly prohibited to write explanations. You must put your answer between ". You must preserve the same style as source texts. Source texts are: [1]
+Answer must be human-like. The given text is "[2]"

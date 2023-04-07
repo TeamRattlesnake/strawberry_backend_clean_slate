@@ -34,7 +34,11 @@ class NNApi:
             raise NNException(f"Error in load_context: {exc}") from exc
 
     def prepare_query(self, context_data: list[str], hint: str):
-        pass
+        sourse_texts_quoted = ['"'+text+'"' for text in context_data]
+        sourse_texts_string = ", ".join(sourse_texts_quoted)
+        self.query = self.context.replace("[1]", sourse_texts_string)
+        self.query = self.query.replace("[2]", hint)
+        self.query = self.query.strip()
 
     def send_request(self):
         try:
@@ -46,57 +50,3 @@ class NNApi:
 
     def get_result(self) -> str:
         return self.result
-
-
-class GenApi(NNApi):
-    """
-    Класс для подготовки данных и отправки запроса для генерации текста
-    """
-
-    def prepare_query(self, context_data: list[str], hint: str):
-        self.query = self.context
-
-
-class AppendApi(NNApi):
-    """
-    Класс для подготовки данных и отправки запроса для добавления текста
-    """
-
-    def prepare_query(self, context_data: list[str], hint: str):
-        self.query = self.context
-
-
-class RephraseApi(NNApi):
-    """
-    Класс для подготовки данных и отправки запроса для перефразирования текста
-    """
-
-    def prepare_query(self, context_data: list[str], hint: str):
-        self.query = self.context
-
-
-class SummarizeApi(NNApi):
-    """
-    Класс для подготовки данных и отправки запроса для сокращения текста
-    """
-
-    def prepare_query(self, context_data: list[str], hint: str):
-        self.query = self.context
-
-
-class ExtendApi(NNApi):
-    """
-    Класс для подготовки данных и отправки запроса для удлинения текста
-    """
-
-    def prepare_query(self, context_data: list[str], hint: str):
-        self.query = self.context
-
-
-class UnmaskApi(NNApi):
-    """
-    Класс для подготовки данных и отправки запроса для подстановки слов в [MASK]
-    """
-
-    def prepare_query(self, context_data: list[str], hint: str):
-        self.query = self.context

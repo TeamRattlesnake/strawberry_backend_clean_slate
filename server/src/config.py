@@ -31,7 +31,7 @@ class Config:
 
         self.api_tokens = data["api_tokens"]
 
-        if len(self.api_tokens)==0:
+        if len(self.api_tokens) == 0:
             raise Exception("No api tokens in config file")
 
         self.__ind = 0

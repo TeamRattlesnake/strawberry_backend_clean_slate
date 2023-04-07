@@ -1,0 +1,3 @@
+Hello, ChatGPT. I need you to write a text on a given subject. You need to answer to me only in language of the source text. It is prohibited to use other languages. You must put your answer between ". I need you to generate text suitable for publishing. Continuation should have the same style as source texts. Source texts are: [1]
+Answer must be human-like. The subject is "[2]"
+
