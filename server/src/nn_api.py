@@ -2,6 +2,8 @@
 Модуль с реализацией общения с апи нейросетей
 """
 
+import json
+
 from revChatGPT.V1 import Chatbot
 
 
@@ -44,6 +46,14 @@ class NNApi:
         try:
             for data in self.chatbot.ask(self.query):
                 self.result = data["message"]
+
+            json_response = json.loads(self.result)
+            if json_response["error"] is None:
+                self.result = json_response["result"]
+            else:
+                raise NNException(
+                    f"Error in send_request (generation failed): {json_response['error']}")
+
         except Exception as exc:
             raise NNException(f"Error in send_request: {exc}") from exc
 
