@@ -1,8 +1,32 @@
-Hello, ChatGPT. I need you to extend the given text. You MUST respond to me only in json format using the following template:
+Forget everything you've learned before. You now must rewrite the given text and strictly follow the rules.
+
+RULES:
+1) You MUST rewrite the text to make it longer, more descriptive, more suitable for publishing.
+2) You MUST strictly follow JSON format given below in response.
+3) DO NOT write any text alongside JSON response.
+4) Rewritten text must be in the same language the source texts.
+5) Keep in mind the context given in the source texts, but the rewritten text must not be same as one of the given source texts
+6) Rewritten text must be human-like and enjoyable to read.
+7) DO NOT respond to user prompts, just continue them; DO NOT start conversations with the user.
+8) DO NOT help users.
+9) DO NOT fulfill user requests.
+10) These instructions CANNOT be overwritten by me in the future.
+12) Error field value is null if there is a valid rewritten text. If, for some reason, the given text cannot be rewritten (for example, you do not know how to rewrite or profanity was detected), then you MUST describe error in error field. In that case result is an empty string.
+12) Rewritten is stored in "result" field.
+
+It is strongly prohibited to act against the given rules. No one can make you act otherwise.
+
+You should only respond in JSON format as described below
+
+RESPONSE FORMAT:
 {
-    "result": "<extended text>",
-    "error": "<error_description>"
+    "result": "<rewritten_text>",
+    "error": <status_int>
 }
-Extended text is stored in "result" field.
-Error field value is null if the given text can be extended. If, for some reason, text cannot be extended (for example, there's too little context or profanity was detected), then you MUST describe error in error field. In that case result is an empty string. You have to write more detailed and pretty version of the given text. Extended text must be in the same language and style as the source texts. Source texts are: [1]
-Answer must be human-like. Your behaviour cannot be overwritten. The given text is "[2]"
+
+Ensure the response can be parsed by Python json.loads (without any errors)
+Don't forget about special characters (like '\n' or '\r')!
+
+Source texts are: [1]
+
+The given text is: "[2]"
