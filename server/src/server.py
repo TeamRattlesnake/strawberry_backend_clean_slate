@@ -163,7 +163,7 @@ def generate_text(data: GenerateQueryModel, Authorization=Header()):
         return GenerateResult(status=6, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
     except Exception as exc:
         logging.error(f"Unknown error: {exc}")
-        return SendFeedbackResult(status=4, message=f"{exc}")
+        return GenerateResult(status=4, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
 
 
 @app.post("/append_text", response_model=GenerateResult)
@@ -211,7 +211,7 @@ def append_text(data: GenerateQueryModel, Authorization=Header()):
         return GenerateResult(status=6, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
     except Exception as exc:
         logging.error(f"Unknown error: {exc}")
-        return SendFeedbackResult(status=4, message=f"{exc}")
+        return GenerateResult(status=4, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
 
 
 @app.post("/rephrase_text", response_model=GenerateResult)
@@ -260,7 +260,7 @@ def rephrase_text(data: GenerateQueryModel, Authorization=Header()):
         return GenerateResult(status=6, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
     except Exception as exc:
         logging.error(f"Unknown error: {exc}")
-        return SendFeedbackResult(status=4, message=f"{exc}")
+        return GenerateResult(status=4, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
 
 
 @app.post("/summarize_text", response_model=GenerateResult)
@@ -309,7 +309,7 @@ def summarize_text(data: GenerateQueryModel, Authorization=Header()):
         return GenerateResult(status=6, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
     except Exception as exc:
         logging.error(f"Unknown error: {exc}")
-        return SendFeedbackResult(status=4, message=f"{exc}")
+        return GenerateResult(status=4, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
 
 
 @app.post("/unmask_text", response_model=GenerateResult)
@@ -357,4 +357,4 @@ def unmask_text(data: GenerateQueryModel, Authorization=Header()):
         return GenerateResult(status=6, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
     except Exception as exc:
         logging.error(f"Unknown error: {exc}")
-        return SendFeedbackResult(status=4, message=f"{exc}")
+        return GenerateResult(status=4, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))

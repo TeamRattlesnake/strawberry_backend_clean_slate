@@ -46,8 +46,11 @@ class NNApi:
                 "Error in prepare_query: the request is too long (hint alone is larger than allowed input in model)")
 
         for text in sourse_texts_quoted:
+            # Собираем строку с постами чтобы она была не длиннее, чем нужно и чтобы каждый пост был длиной хотя бы 5 символов
             if len(sourse_texts_string.split(" ")) + len(text.split(" ")) + len(hint.split(" ")) >= MAX_WORDS_LEN:
-                break
+                continue
+            if len(text) < 5:
+                continue
             sourse_texts_string += f"{text}, "
         # Обрезать запятую и пробел
         sourse_texts_string = sourse_texts_string[:-2]
