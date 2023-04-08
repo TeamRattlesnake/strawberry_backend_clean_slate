@@ -13,6 +13,7 @@ class FeedbackModel(BaseModel):
 
     score - int, оценка результата
     """
+
     result_id: int
     score: int
 
@@ -25,6 +26,7 @@ class GenerateQueryModel(BaseModel):
 
     hint - str, запрос на генерацию контента. Содержит максимально краткую мысль, о чем писать текст
     """
+
     context_data: list[str]
     hint: str
 
@@ -44,6 +46,7 @@ class SendFeedbackResult(BaseModel):
 
     message - str, текстовое описание статуса. Тут хранится текст исключения, если оно произошло
     """
+
     status: int
     message: str
 
@@ -56,6 +59,7 @@ class GenerateResultData(BaseModel):
 
     result_id - int, айди результата генерации для отправки фидбека по нему
     """
+
     text_data: str
     result_id: int
 
@@ -78,6 +82,7 @@ class GenerateResult(BaseModel):
 
     data - GenerateResultData, text_data - str, результат генерации, result_id - int, айди результата генерации для отправки фидбека по нему
     """
+
     status: int
     message: str
     data: GenerateResultData

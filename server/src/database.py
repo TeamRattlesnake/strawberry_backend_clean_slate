@@ -3,18 +3,30 @@
 """
 
 import datetime
-from sqlalchemy import create_engine, Table, Column, String, Integer, DateTime, MetaData, inspect, select, update, insert
+from sqlalchemy import (
+    create_engine,
+    Table,
+    Column,
+    String,
+    Integer,
+    DateTime,
+    MetaData,
+    inspect,
+    select,
+    update,
+    insert,
+)
 
 
 class DBException(Exception):
     """
     Класс исключения, связанного с базой данных
     """
+
     pass
 
 
-class Database():
-
+class Database:
     def __init__(self, user, password, database, port, host):
         self.database_uri = f"mysql+pymysql://{user}:{password}@{host}:{port}/{database}?charset=utf8mb4"
         self.engine = create_engine(self.database_uri)
@@ -28,8 +40,12 @@ class Database():
             Column("query", String(3072), nullable=False),
             Column("text", String(3072), nullable=False),
             Column("rating", Integer, nullable=False, default=0),
-            Column("date", DateTime(timezone=True),
-                   default=datetime.datetime.utcnow, nullable=False),
+            Column(
+                "date",
+                DateTime(timezone=True),
+                default=datetime.datetime.utcnow,
+                nullable=False,
+            ),
         )
 
     def need_migration(self) -> bool:
@@ -52,20 +68,25 @@ class Database():
         except Exception as exc:
             raise DBException(f"Error in migrate: {exc}") from exc
 
-    def add_generated_data(self, query: str, text: str,) -> int:
+    def add_generated_data(
+        self,
+        query: str,
+        text: str,
+    ) -> int:
         """
         Добавляет сгенерированный текст с нулевым рейтингом
         """
         try:
             with self.engine.connect() as connection:
                 insert_query = insert(self.generated_data).values(
-                    query=query, text=text)
+                    query=query, text=text
+                )
                 connection.execute(insert_query)
 
                 get_id_query = select(self.generated_data.c.id).where(
-                    self.generated_data.c.text == text)
-                text_id = int(connection.execute(
-                    get_id_query).fetchall()[0][0])
+                    self.generated_data.c.text == text
+                )
+                text_id = int(connection.execute(get_id_query).fetchall()[0][0])
 
                 return text_id
         except Exception as exc:
@@ -77,8 +98,11 @@ class Database():
         """
         try:
             with self.engine.connect() as connection:
-                update_query = update(self.generated_data).where(
-                    self.generated_data.c.id == text_id).values(rating=new_score)
+                update_query = (
+                    update(self.generated_data)
+                    .where(self.generated_data.c.id == text_id)
+                    .values(rating=new_score)
+                )
                 connection.execute(update_query)
         except Exception as exc:
             raise DBException(f"Error in change_rating: {exc}") from exc

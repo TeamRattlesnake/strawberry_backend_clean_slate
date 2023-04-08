@@ -9,19 +9,36 @@ from fastapi import FastAPI, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
-from models import FeedbackModel, GenerateQueryModel, SendFeedbackResult, GenerateResultData, GenerateResult
+from models import (
+    FeedbackModel,
+    GenerateQueryModel,
+    SendFeedbackResult,
+    GenerateResultData,
+    GenerateResult,
+)
 from config import Config
 from database import Database, DBException
 from utils import is_valid, parse_query_string, UtilsException
 from nn_api import NNException, NNApi
 
-logging.basicConfig(format="%(asctime)s %(message)s", handlers=[logging.FileHandler(
-    f"/home/logs/log_{time.ctime().replace(' ', '_')}.txt", mode="w", encoding="UTF-8")], datefmt="%H:%M:%S UTC", level=logging.INFO)
+logging.basicConfig(
+    format="%(asctime)s %(message)s",
+    handlers=[
+        logging.FileHandler(
+            f"/home/logs/log_{time.ctime().replace(' ', '_')}.txt",
+            mode="w",
+            encoding="UTF-8",
+        )
+    ],
+    datefmt="%H:%M:%S UTC",
+    level=logging.INFO,
+)
 
 app = FastAPI()
 config = Config("config.json")
-db = Database(config.db_user, config.db_password,
-              config.db_name, config.db_port, config.db_host)
+db = Database(
+    config.db_user, config.db_password, config.db_name, config.db_port, config.db_host
+)
 
 origins = [
     "*",
@@ -81,7 +98,7 @@ def startup():
         raise Exception(f"Error! {exc} Shutting down...") from exc
 
 
-@app.post('/send_feedback', response_model=SendFeedbackResult)
+@app.post("/send_feedback", response_model=SendFeedbackResult)
 def send_feedback(data: FeedbackModel, Authorization=Header()):
     """
     Метод для отправки фидбека по результату работы сервиса.
@@ -96,8 +113,7 @@ def send_feedback(data: FeedbackModel, Authorization=Header()):
         if not is_valid(query=auth_data, secret=config.client_secret):
             return SendFeedbackResult(status=1, message="Authorization error")
     except UtilsException as exc:
-        logging.error(
-            f"Error in utils, probably the request was not correct: {exc}")
+        logging.error(f"Error in utils, probably the request was not correct: {exc}")
         return SendFeedbackResult(status=3, message=f"{exc}")
 
     result_id = data.result_id
@@ -106,8 +122,7 @@ def send_feedback(data: FeedbackModel, Authorization=Header()):
 
     try:
         db.change_rating(result_id, score)
-        logging.info(
-            f"/send_feedback\tresult_id={result_id}; score={score}\tOK")
+        logging.info(f"/send_feedback\tresult_id={result_id}; score={score}\tOK")
         return SendFeedbackResult(status=0, message="Score updated")
     except DBException as exc:
         logging.error(f"Error in database: {exc}")
@@ -130,11 +145,18 @@ def generate_text(data: GenerateQueryModel, Authorization=Header()):
     try:
         auth_data = parse_query_string(Authorization)
         if not is_valid(query=auth_data, secret=config.client_secret):
-            return GenerateResult(status=1, message="Authorization error", data=GenerateResultData(text_data="", result_id=-1))
+            return GenerateResult(
+                status=1,
+                message="Authorization error",
+                data=GenerateResultData(text_data="", result_id=-1),
+            )
     except UtilsException as exc:
-        logging.error(
-            f"Error in utils, probably the request was not correct: {exc}")
-        return GenerateResult(status=3, message="Authorization error", data=GenerateResultData(text_data="", result_id=-1))
+        logging.error(f"Error in utils, probably the request was not correct: {exc}")
+        return GenerateResult(
+            status=3,
+            message="Authorization error",
+            data=GenerateResultData(text_data="", result_id=-1),
+        )
     except Exception as exc:
         logging.error(f"Unknown error: {exc}")
         return SendFeedbackResult(status=4, message=f"{exc}")
@@ -148,22 +170,38 @@ def generate_text(data: GenerateQueryModel, Authorization=Header()):
         api.load_context(config.gen_context_path)
         api.prepare_query(texts, hint)
         logging.info(
-            f"Ready to send request to ChatGPT with token={api.token}; query={api.query}")
+            f"Ready to send request to ChatGPT with token={api.token}; query={api.query}"
+        )
         api.send_request()
         result = api.get_result()
         result_id = db.add_generated_data(hint, result)
-        logging.info(
-            f"/generate_text\tlen(texts)={len(texts)}; hint={hint}\tOK")
-        return GenerateResult(status=0, message="Text generated", data=GenerateResultData(text_data=result, result_id=result_id))
+        logging.info(f"/generate_text\tlen(texts)={len(texts)}; hint={hint}\tOK")
+        return GenerateResult(
+            status=0,
+            message="Text generated",
+            data=GenerateResultData(text_data=result, result_id=result_id),
+        )
     except NNException as exc:
         logging.error(f"Error in NN API while generating text: {exc}")
-        return GenerateResult(status=2, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
+        return GenerateResult(
+            status=2,
+            message=f"{exc}",
+            data=GenerateResultData(text_data="", result_id=-1),
+        )
     except DBException as exc:
         logging.error(f"Error in database while generating text: {exc}")
-        return GenerateResult(status=6, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
+        return GenerateResult(
+            status=6,
+            message=f"{exc}",
+            data=GenerateResultData(text_data="", result_id=-1),
+        )
     except Exception as exc:
         logging.error(f"Unknown error: {exc}")
-        return GenerateResult(status=4, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
+        return GenerateResult(
+            status=4,
+            message=f"{exc}",
+            data=GenerateResultData(text_data="", result_id=-1),
+        )
 
 
 @app.post("/append_text", response_model=GenerateResult)
@@ -179,11 +217,18 @@ def append_text(data: GenerateQueryModel, Authorization=Header()):
     try:
         auth_data = parse_query_string(Authorization)
         if not is_valid(query=auth_data, secret=config.client_secret):
-            return GenerateResult(status=1, message="Authorization error", data=GenerateResultData(text_data="", result_id=-1))
+            return GenerateResult(
+                status=1,
+                message="Authorization error",
+                data=GenerateResultData(text_data="", result_id=-1),
+            )
     except UtilsException as exc:
-        logging.error(
-            f"Error in utils, probably the request was not correct: {exc}")
-        return GenerateResult(status=3, message="Authorization error", data=GenerateResultData(text_data="", result_id=-1))
+        logging.error(f"Error in utils, probably the request was not correct: {exc}")
+        return GenerateResult(
+            status=3,
+            message="Authorization error",
+            data=GenerateResultData(text_data="", result_id=-1),
+        )
     except Exception as exc:
         logging.error(f"Unknown error: {exc}")
         return SendFeedbackResult(status=4, message=f"{exc}")
@@ -197,21 +242,38 @@ def append_text(data: GenerateQueryModel, Authorization=Header()):
         api.load_context(config.append_context_path)
         api.prepare_query(texts, hint)
         logging.info(
-            f"Ready to send request to ChatGPT with token={api.token}; query={api.query}")
+            f"Ready to send request to ChatGPT with token={api.token}; query={api.query}"
+        )
         api.send_request()
         result = api.get_result()
         result_id = db.add_generated_data(hint, result)
         logging.info(f"/append_text\tlen(texts)={len(texts)}; hint={hint}\tOK")
-        return GenerateResult(status=0, message="Text generated", data=GenerateResultData(text_data=result, result_id=result_id))
+        return GenerateResult(
+            status=0,
+            message="Text generated",
+            data=GenerateResultData(text_data=result, result_id=result_id),
+        )
     except NNException as exc:
         logging.error(f"Error in NN API while generating text: {exc}")
-        return GenerateResult(status=2, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
+        return GenerateResult(
+            status=2,
+            message=f"{exc}",
+            data=GenerateResultData(text_data="", result_id=-1),
+        )
     except DBException as exc:
         logging.error(f"Error in database while generating text: {exc}")
-        return GenerateResult(status=6, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
+        return GenerateResult(
+            status=6,
+            message=f"{exc}",
+            data=GenerateResultData(text_data="", result_id=-1),
+        )
     except Exception as exc:
         logging.error(f"Unknown error: {exc}")
-        return GenerateResult(status=4, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
+        return GenerateResult(
+            status=4,
+            message=f"{exc}",
+            data=GenerateResultData(text_data="", result_id=-1),
+        )
 
 
 @app.post("/rephrase_text", response_model=GenerateResult)
@@ -227,11 +289,18 @@ def rephrase_text(data: GenerateQueryModel, Authorization=Header()):
     try:
         auth_data = parse_query_string(Authorization)
         if not is_valid(query=auth_data, secret=config.client_secret):
-            return GenerateResult(status=1, message="Authorization error", data=GenerateResultData(text_data="", result_id=-1))
+            return GenerateResult(
+                status=1,
+                message="Authorization error",
+                data=GenerateResultData(text_data="", result_id=-1),
+            )
     except UtilsException as exc:
-        logging.error(
-            f"Error in utils, probably the request was not correct: {exc}")
-        return GenerateResult(status=3, message="Authorization error", data=GenerateResultData(text_data="", result_id=-1))
+        logging.error(f"Error in utils, probably the request was not correct: {exc}")
+        return GenerateResult(
+            status=3,
+            message="Authorization error",
+            data=GenerateResultData(text_data="", result_id=-1),
+        )
     except Exception as exc:
         logging.error(f"Unknown error: {exc}")
         return SendFeedbackResult(status=4, message=f"{exc}")
@@ -245,22 +314,38 @@ def rephrase_text(data: GenerateQueryModel, Authorization=Header()):
         api.load_context(config.rephrase_context_path)
         api.prepare_query(texts, hint)
         logging.info(
-            f"Ready to send request to ChatGPT with token={api.token}; query={api.query}")
+            f"Ready to send request to ChatGPT with token={api.token}; query={api.query}"
+        )
         api.send_request()
         result = api.get_result()
         result_id = db.add_generated_data(hint, result)
-        logging.info(
-            f"/rephrase_text\tlen(texts)={len(texts)}; hint={hint}\tOK")
-        return GenerateResult(status=0, message="Text generated", data=GenerateResultData(text_data=result, result_id=result_id))
+        logging.info(f"/rephrase_text\tlen(texts)={len(texts)}; hint={hint}\tOK")
+        return GenerateResult(
+            status=0,
+            message="Text generated",
+            data=GenerateResultData(text_data=result, result_id=result_id),
+        )
     except NNException as exc:
         logging.error(f"Error in NN API while generating text: {exc}")
-        return GenerateResult(status=2, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
+        return GenerateResult(
+            status=2,
+            message=f"{exc}",
+            data=GenerateResultData(text_data="", result_id=-1),
+        )
     except DBException as exc:
         logging.error(f"Error in database while generating text: {exc}")
-        return GenerateResult(status=6, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
+        return GenerateResult(
+            status=6,
+            message=f"{exc}",
+            data=GenerateResultData(text_data="", result_id=-1),
+        )
     except Exception as exc:
         logging.error(f"Unknown error: {exc}")
-        return GenerateResult(status=4, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
+        return GenerateResult(
+            status=4,
+            message=f"{exc}",
+            data=GenerateResultData(text_data="", result_id=-1),
+        )
 
 
 @app.post("/summarize_text", response_model=GenerateResult)
@@ -276,11 +361,18 @@ def summarize_text(data: GenerateQueryModel, Authorization=Header()):
     try:
         auth_data = parse_query_string(Authorization)
         if not is_valid(query=auth_data, secret=config.client_secret):
-            return GenerateResult(status=1, message="Authorization error", data=GenerateResultData(text_data="", result_id=-1))
+            return GenerateResult(
+                status=1,
+                message="Authorization error",
+                data=GenerateResultData(text_data="", result_id=-1),
+            )
     except UtilsException as exc:
-        logging.error(
-            f"Error in utils, probably the request was not correct: {exc}")
-        return GenerateResult(status=3, message="Authorization error", data=GenerateResultData(text_data="", result_id=-1))
+        logging.error(f"Error in utils, probably the request was not correct: {exc}")
+        return GenerateResult(
+            status=3,
+            message="Authorization error",
+            data=GenerateResultData(text_data="", result_id=-1),
+        )
     except Exception as exc:
         logging.error(f"Unknown error: {exc}")
         return SendFeedbackResult(status=4, message=f"{exc}")
@@ -294,22 +386,38 @@ def summarize_text(data: GenerateQueryModel, Authorization=Header()):
         api.load_context(config.summarize_context_path)
         api.prepare_query(texts, hint)
         logging.info(
-            f"Ready to send request to ChatGPT with token={api.token}; query={api.query}")
+            f"Ready to send request to ChatGPT with token={api.token}; query={api.query}"
+        )
         api.send_request()
         result = api.get_result()
         result_id = db.add_generated_data(hint, result)
-        logging.info(
-            f"/summarize_text\tlen(texts)={len(texts)}; hint={hint}\tOK")
-        return GenerateResult(status=0, message="Text generated", data=GenerateResultData(text_data=result, result_id=result_id))
+        logging.info(f"/summarize_text\tlen(texts)={len(texts)}; hint={hint}\tOK")
+        return GenerateResult(
+            status=0,
+            message="Text generated",
+            data=GenerateResultData(text_data=result, result_id=result_id),
+        )
     except NNException as exc:
         logging.error(f"Error in NN API while generating text: {exc}")
-        return GenerateResult(status=2, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
+        return GenerateResult(
+            status=2,
+            message=f"{exc}",
+            data=GenerateResultData(text_data="", result_id=-1),
+        )
     except DBException as exc:
         logging.error(f"Error in database while generating text: {exc}")
-        return GenerateResult(status=6, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
+        return GenerateResult(
+            status=6,
+            message=f"{exc}",
+            data=GenerateResultData(text_data="", result_id=-1),
+        )
     except Exception as exc:
         logging.error(f"Unknown error: {exc}")
-        return GenerateResult(status=4, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
+        return GenerateResult(
+            status=4,
+            message=f"{exc}",
+            data=GenerateResultData(text_data="", result_id=-1),
+        )
 
 
 @app.post("/extend_text", response_model=GenerateResult)
@@ -326,11 +434,18 @@ def extend_text(data: GenerateQueryModel, Authorization=Header()):
     try:
         auth_data = parse_query_string(Authorization)
         if not is_valid(query=auth_data, secret=config.client_secret):
-            return GenerateResult(status=1, message="Authorization error", data=GenerateResultData(text_data="", result_id=-1))
+            return GenerateResult(
+                status=1,
+                message="Authorization error",
+                data=GenerateResultData(text_data="", result_id=-1),
+            )
     except UtilsException as exc:
-        logging.error(
-            f"Error in utils, probably the request was not correct: {exc}")
-        return GenerateResult(status=3, message="Authorization error", data=GenerateResultData(text_data="", result_id=-1))
+        logging.error(f"Error in utils, probably the request was not correct: {exc}")
+        return GenerateResult(
+            status=3,
+            message="Authorization error",
+            data=GenerateResultData(text_data="", result_id=-1),
+        )
     except Exception as exc:
         logging.error(f"Unknown error: {exc}")
         return SendFeedbackResult(status=4, message=f"{exc}")
@@ -344,22 +459,38 @@ def extend_text(data: GenerateQueryModel, Authorization=Header()):
         api.load_context(config.extend_context_path)
         api.prepare_query(texts, hint)
         logging.info(
-            f"Ready to send request to ChatGPT with token={api.token}; query={api.query}")
+            f"Ready to send request to ChatGPT with token={api.token}; query={api.query}"
+        )
         api.send_request()
         result = api.get_result()
         result_id = db.add_generated_data(hint, result)
-        logging.info(
-            f"/extend_text\tlen(texts)={len(texts)}; hint={hint}\tOK")
-        return GenerateResult(status=0, message="Text generated", data=GenerateResultData(text_data=result, result_id=result_id))
+        logging.info(f"/extend_text\tlen(texts)={len(texts)}; hint={hint}\tOK")
+        return GenerateResult(
+            status=0,
+            message="Text generated",
+            data=GenerateResultData(text_data=result, result_id=result_id),
+        )
     except NNException as exc:
         logging.error(f"Error in NN API while generating text: {exc}")
-        return GenerateResult(status=2, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
+        return GenerateResult(
+            status=2,
+            message=f"{exc}",
+            data=GenerateResultData(text_data="", result_id=-1),
+        )
     except DBException as exc:
         logging.error(f"Error in database while generating text: {exc}")
-        return GenerateResult(status=6, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
+        return GenerateResult(
+            status=6,
+            message=f"{exc}",
+            data=GenerateResultData(text_data="", result_id=-1),
+        )
     except Exception as exc:
         logging.error(f"Unknown error: {exc}")
-        return GenerateResult(status=4, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
+        return GenerateResult(
+            status=4,
+            message=f"{exc}",
+            data=GenerateResultData(text_data="", result_id=-1),
+        )
 
 
 @app.post("/unmask_text", response_model=GenerateResult)
@@ -375,11 +506,18 @@ def unmask_text(data: GenerateQueryModel, Authorization=Header()):
     try:
         auth_data = parse_query_string(Authorization)
         if not is_valid(query=auth_data, secret=config.client_secret):
-            return GenerateResult(status=1, message="Authorization error", data=GenerateResultData(text_data="", result_id=-1))
+            return GenerateResult(
+                status=1,
+                message="Authorization error",
+                data=GenerateResultData(text_data="", result_id=-1),
+            )
     except UtilsException as exc:
-        logging.error(
-            f"Error in utils, probably the request was not correct: {exc}")
-        return GenerateResult(status=3, message="Authorization error", data=GenerateResultData(text_data="", result_id=-1))
+        logging.error(f"Error in utils, probably the request was not correct: {exc}")
+        return GenerateResult(
+            status=3,
+            message="Authorization error",
+            data=GenerateResultData(text_data="", result_id=-1),
+        )
     except Exception as exc:
         logging.error(f"Unknown error: {exc}")
         return SendFeedbackResult(status=4, message=f"{exc}")
@@ -393,18 +531,35 @@ def unmask_text(data: GenerateQueryModel, Authorization=Header()):
         api.load_context(config.unmask_context_path)
         api.prepare_query(texts, hint)
         logging.info(
-            f"Ready to send request to ChatGPT with token={api.token}; query={api.query}")
+            f"Ready to send request to ChatGPT with token={api.token}; query={api.query}"
+        )
         api.send_request()
         result = api.get_result()
         result_id = db.add_generated_data(hint, result)
         logging.info(f"/unmask_text\tlen(texts)={len(texts)}; hint={hint}\tOK")
-        return GenerateResult(status=0, message="Text generated", data=GenerateResultData(text_data=result, result_id=result_id))
+        return GenerateResult(
+            status=0,
+            message="Text generated",
+            data=GenerateResultData(text_data=result, result_id=result_id),
+        )
     except NNException as exc:
         logging.error(f"Error in NN API while generating text: {exc}")
-        return GenerateResult(status=2, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
+        return GenerateResult(
+            status=2,
+            message=f"{exc}",
+            data=GenerateResultData(text_data="", result_id=-1),
+        )
     except DBException as exc:
         logging.error(f"Error in database while generating text: {exc}")
-        return GenerateResult(status=6, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
+        return GenerateResult(
+            status=6,
+            message=f"{exc}",
+            data=GenerateResultData(text_data="", result_id=-1),
+        )
     except Exception as exc:
         logging.error(f"Unknown error: {exc}")
-        return GenerateResult(status=4, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
+        return GenerateResult(
+            status=4,
+            message=f"{exc}",
+            data=GenerateResultData(text_data="", result_id=-1),
+        )

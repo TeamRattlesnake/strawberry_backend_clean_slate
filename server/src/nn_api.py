@@ -13,6 +13,7 @@ class NNException(Exception):
     """
     Класс исключения, связанного с подготовкой данных и отправкой запроса на апи нейросетей
     """
+
     pass
 
 
@@ -23,9 +24,11 @@ class NNApi:
 
     def __init__(self, token):
         self.token = token
-        self.chatbot = Chatbot(config={
-            "access_token": self.token,
-        })
+        self.chatbot = Chatbot(
+            config={
+                "access_token": self.token,
+            }
+        )
         self.context = ""
         self.query = ""
         self.result = ""
@@ -44,16 +47,22 @@ class NNApi:
         """
         Расставляет данные по шаблону контекста
         """
-        sourse_texts_quoted = ['"'+text+'"' for text in context_data]
+        sourse_texts_quoted = ['"' + text + '"' for text in context_data]
         sourse_texts_string = ""
 
         if len(hint.split(" ")) >= MAX_WORDS_LEN:
             raise NNException(
-                "Error in prepare_query: the request is too long (hint alone is larger than allowed input in model)")
+                "Error in prepare_query: the request is too long (hint alone is larger than allowed input in model)"
+            )
 
         for text in sourse_texts_quoted:
             # Собираем строку с постами чтобы она была не длиннее, чем нужно
-            if len(sourse_texts_string.split(" ")) + len(text.split(" ")) + len(hint.split(" ")) >= MAX_WORDS_LEN:
+            if (
+                len(sourse_texts_string.split(" "))
+                + len(text.split(" "))
+                + len(hint.split(" "))
+                >= MAX_WORDS_LEN
+            ):
                 continue
             sourse_texts_string += f"{text}, "
         # Обрезать запятую и пробел
@@ -76,7 +85,8 @@ class NNApi:
                 self.result = json_response["result"]
             else:
                 raise NNException(
-                    f"Error in send_request (generation failed): {json_response['error']}")
+                    f"Error in send_request (generation failed): {json_response['error']}"
+                )
 
         except Exception as exc:
             raise NNException(f"Error in send_request: {exc}") from exc
