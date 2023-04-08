@@ -84,7 +84,11 @@ def startup():
 @app.post('/send_feedback', response_model=OperationResult)
 def send_feedback(data: FeedbackModel, Authorization=Header()):
     """
-    Оценить результат по айди
+    Метод для отправки фидбека по результату работы сервиса.
+
+    result_id - int, номер результата работы сервиса.
+
+    score - int,  изменение оценки 1 или -1 (хотя можно и любое другое целое число)
     """
 
     try:
@@ -113,7 +117,11 @@ def send_feedback(data: FeedbackModel, Authorization=Header()):
 @app.post("/generate_text", response_model=GenerateResultModel)
 def generate_text(data: GenerateQueryModel, Authorization=Header()):
     """
-    Пишет целый пост по текстовому описанию
+    Метод для получения целого текста по введенному запросу
+
+    context_data - list[str], список текстов существующих постов в паблике (лучше не менее 3-5 непустых текстов )
+
+    hint - str, запрос на генерацию контента. Содержит максимально краткую мысль, о чем писать текст
     """
 
     try:
@@ -152,7 +160,11 @@ def generate_text(data: GenerateQueryModel, Authorization=Header()):
 @app.post("/append_text", response_model=GenerateResultModel)
 def append_text(data: GenerateQueryModel, Authorization=Header()):
     """
-    Добавляет несколько слов к затравке и возвращает все вместе
+    Добавляет несколько слов или предложений к тексту запроса и возвращает эти добавленные слова
+
+    context_data - list[str], список текстов существующих постов в паблике (лучше не менее 3-5 непустых текстов )
+
+    hint - str, запрос на генерацию контента. Содержит текст, к концу которого нужно добавить еще текст
     """
 
     try:
@@ -190,7 +202,11 @@ def append_text(data: GenerateQueryModel, Authorization=Header()):
 @app.post("/rephrase_text", response_model=GenerateResultModel)
 def rephrase_text(data: GenerateQueryModel, Authorization=Header()):
     """
-    Перефразирует поданный текст
+    Перефразирует поданный текст, возвращает текст примерно той же длины, но более складный по содержанию
+
+    context_data - list[str], список текстов существующих постов в паблике (лучше не менее 3-5 непустых текстов )
+
+    hint - str, запрос на генерацию контента. Содержит текст, который надо перефразировать
     """
 
     try:
@@ -229,7 +245,11 @@ def rephrase_text(data: GenerateQueryModel, Authorization=Header()):
 @app.post("/summarize_text", response_model=GenerateResultModel)
 def summarize_text(data: GenerateQueryModel, Authorization=Header()):
     """
-    Резюмирует поданный текст
+    Резюмирует поданный текст. Возвращает главную мысль текста в запросе в одно предложение
+
+    context_data - list[str], список текстов существующих постов в паблике (лучше не менее 3-5 непустых текстов )
+
+    hint - str, запрос на генерацию контента. Содержит текст (лучше длинный), который надо сжать
     """
 
     try:
@@ -268,7 +288,11 @@ def summarize_text(data: GenerateQueryModel, Authorization=Header()):
 @app.post("/extend_text", response_model=GenerateResultModel)
 def extend_text(data: GenerateQueryModel, Authorization=Header()):
     """
-    Удлиняет поданный текст
+    Удлиняет поданный текст, работает как перефразирование, но еще и удлиняет
+
+    context_data - list[str], список текстов существующих постов в паблике (лучше не менее 3-5 непустых текстов )
+
+    hint - str, запрос на генерацию контента. Содержит текст, который надо удлинить
     """
 
     try:
@@ -306,7 +330,11 @@ def extend_text(data: GenerateQueryModel, Authorization=Header()):
 @app.post("/unmask_text", response_model=GenerateResultModel)
 def unmask_text(data: GenerateQueryModel, Authorization=Header()):
     """
-    Заменяет <MASK> на наиболее подходящие слова
+    Заменяет `<MASK>` на наиболее подходящие слова или предложения. Возвращает целый текст с замененным `<MASK>`
+
+    context_data - list[str], список текстов существующих постов в паблике (лучше не менее 3-5 непустых текстов )
+
+    hint - str, запрос на генерацию контента. Строка, в которой есть ключевое слово `<MASK>`
     """
 
     try:
