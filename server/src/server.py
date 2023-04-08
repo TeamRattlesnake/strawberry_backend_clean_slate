@@ -112,6 +112,9 @@ def send_feedback(data: FeedbackModel, Authorization=Header()):
     except DBException as exc:
         logging.error(f"Error in database: {exc}")
         return SendFeedbackResult(status=6, message=f"{exc}")
+    except Exception as exc:
+        logging.error(f"Unknown error: {exc}")
+        return SendFeedbackResult(status=4, message=f"{exc}")
 
 
 @app.post("/generate_text", response_model=GenerateResult)
@@ -132,6 +135,9 @@ def generate_text(data: GenerateQueryModel, Authorization=Header()):
         logging.error(
             f"Error in utils, probably the request was not correct: {exc}")
         return GenerateResult(status=3, message="Authorization error", data=GenerateResultData(text_data="", result_id=-1))
+    except Exception as exc:
+        logging.error(f"Unknown error: {exc}")
+        return SendFeedbackResult(status=4, message=f"{exc}")
 
     texts = data.context_data
     hint = data.hint
@@ -155,6 +161,9 @@ def generate_text(data: GenerateQueryModel, Authorization=Header()):
     except DBException as exc:
         logging.error(f"Error in database while generating text: {exc}")
         return GenerateResult(status=6, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
+    except Exception as exc:
+        logging.error(f"Unknown error: {exc}")
+        return SendFeedbackResult(status=4, message=f"{exc}")
 
 
 @app.post("/append_text", response_model=GenerateResult)
@@ -175,6 +184,9 @@ def append_text(data: GenerateQueryModel, Authorization=Header()):
         logging.error(
             f"Error in utils, probably the request was not correct: {exc}")
         return GenerateResult(status=3, message="Authorization error", data=GenerateResultData(text_data="", result_id=-1))
+    except Exception as exc:
+        logging.error(f"Unknown error: {exc}")
+        return SendFeedbackResult(status=4, message=f"{exc}")
 
     texts = data.context_data
     hint = data.hint
@@ -197,6 +209,9 @@ def append_text(data: GenerateQueryModel, Authorization=Header()):
     except DBException as exc:
         logging.error(f"Error in database while generating text: {exc}")
         return GenerateResult(status=6, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
+    except Exception as exc:
+        logging.error(f"Unknown error: {exc}")
+        return SendFeedbackResult(status=4, message=f"{exc}")
 
 
 @app.post("/rephrase_text", response_model=GenerateResult)
@@ -217,6 +232,9 @@ def rephrase_text(data: GenerateQueryModel, Authorization=Header()):
         logging.error(
             f"Error in utils, probably the request was not correct: {exc}")
         return GenerateResult(status=3, message="Authorization error", data=GenerateResultData(text_data="", result_id=-1))
+    except Exception as exc:
+        logging.error(f"Unknown error: {exc}")
+        return SendFeedbackResult(status=4, message=f"{exc}")
 
     texts = data.context_data
     hint = data.hint
@@ -240,6 +258,9 @@ def rephrase_text(data: GenerateQueryModel, Authorization=Header()):
     except DBException as exc:
         logging.error(f"Error in database while generating text: {exc}")
         return GenerateResult(status=6, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
+    except Exception as exc:
+        logging.error(f"Unknown error: {exc}")
+        return SendFeedbackResult(status=4, message=f"{exc}")
 
 
 @app.post("/summarize_text", response_model=GenerateResult)
@@ -260,6 +281,9 @@ def summarize_text(data: GenerateQueryModel, Authorization=Header()):
         logging.error(
             f"Error in utils, probably the request was not correct: {exc}")
         return GenerateResult(status=3, message="Authorization error", data=GenerateResultData(text_data="", result_id=-1))
+    except Exception as exc:
+        logging.error(f"Unknown error: {exc}")
+        return SendFeedbackResult(status=4, message=f"{exc}")
 
     texts = data.context_data
     hint = data.hint
@@ -283,6 +307,9 @@ def summarize_text(data: GenerateQueryModel, Authorization=Header()):
     except DBException as exc:
         logging.error(f"Error in database while generating text: {exc}")
         return GenerateResult(status=6, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
+    except Exception as exc:
+        logging.error(f"Unknown error: {exc}")
+        return SendFeedbackResult(status=4, message=f"{exc}")
 
 
 @app.post("/unmask_text", response_model=GenerateResult)
@@ -303,6 +330,9 @@ def unmask_text(data: GenerateQueryModel, Authorization=Header()):
         logging.error(
             f"Error in utils, probably the request was not correct: {exc}")
         return GenerateResult(status=3, message="Authorization error", data=GenerateResultData(text_data="", result_id=-1))
+    except Exception as exc:
+        logging.error(f"Unknown error: {exc}")
+        return SendFeedbackResult(status=4, message=f"{exc}")
 
     texts = data.context_data
     hint = data.hint
@@ -325,3 +355,6 @@ def unmask_text(data: GenerateQueryModel, Authorization=Header()):
     except DBException as exc:
         logging.error(f"Error in database while generating text: {exc}")
         return GenerateResult(status=6, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
+    except Exception as exc:
+        logging.error(f"Unknown error: {exc}")
+        return SendFeedbackResult(status=4, message=f"{exc}")
