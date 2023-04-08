@@ -9,7 +9,7 @@ from fastapi import FastAPI, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
-from models import OperationResult, GenerateQueryModel, GenerateResultModel, FeedbackModel
+from models import FeedbackModel, GenerateQueryModel, SendFeedbackResult, GenerateResultData, GenerateResult
 from config import Config
 from database import Database, DBException
 from utils import is_valid, parse_query_string, UtilsException
@@ -81,7 +81,7 @@ def startup():
         raise Exception(f"Error! {exc} Restarting...") from exc
 
 
-@app.post('/send_feedback', response_model=OperationResult)
+@app.post('/send_feedback', response_model=SendFeedbackResult)
 def send_feedback(data: FeedbackModel, Authorization=Header()):
     """
     Метод для отправки фидбека по результату работы сервиса.
@@ -94,11 +94,11 @@ def send_feedback(data: FeedbackModel, Authorization=Header()):
     try:
         auth_data = parse_query_string(Authorization)
         if not is_valid(query=auth_data, secret=config.client_secret):
-            return OperationResult(code=1, message="Authorization error")
+            return SendFeedbackResult(status=1, message="Authorization error")
     except UtilsException as exc:
         logging.error(
             f"Error in utils, probably the request was not correct: {exc}")
-        return OperationResult(code=3, message=f"{exc}")
+        return SendFeedbackResult(status=3, message=f"{exc}")
 
     result_id = data.result_id
     score = data.score
@@ -108,13 +108,13 @@ def send_feedback(data: FeedbackModel, Authorization=Header()):
         db.change_rating(result_id, score)
         logging.info(
             f"/send_feedback\tresult_id={result_id}; score={score}\tOK")
-        return OperationResult(code=0, message="Score updated")
+        return SendFeedbackResult(status=0, message="Score updated")
     except DBException as exc:
         logging.error(f"Error in database: {exc}")
-        return OperationResult(code=6, message=f"{exc}")
+        return SendFeedbackResult(status=6, message=f"{exc}")
 
 
-@app.post("/generate_text", response_model=GenerateResultModel)
+@app.post("/generate_text", response_model=GenerateResult)
 def generate_text(data: GenerateQueryModel, Authorization=Header()):
     """
     Метод для получения текста на тему, заданную в запросе. Текст генерируется с нуля
@@ -127,11 +127,11 @@ def generate_text(data: GenerateQueryModel, Authorization=Header()):
     try:
         auth_data = parse_query_string(Authorization)
         if not is_valid(query=auth_data, secret=config.client_secret):
-            return OperationResult(code=1, message="Authorization error")
+            return GenerateResult(status=1, message="Authorization error", data=GenerateResultData(text_data="", result_id=-1))
     except UtilsException as exc:
         logging.error(
             f"Error in utils, probably the request was not correct: {exc}")
-        return OperationResult(code=3, message=f"{exc}")
+        return GenerateResult(status=3, message="Authorization error", data=GenerateResultData(text_data="", result_id=-1))
 
     texts = data.context_data
     hint = data.hint
@@ -148,16 +148,16 @@ def generate_text(data: GenerateQueryModel, Authorization=Header()):
         result_id = db.add_generated_data(hint, result)
         logging.info(
             f"/generate_text\tlen(texts)={len(texts)}; hint={hint}\tOK")
-        return GenerateResultModel(status=OperationResult(code=0, message="Text generated"), text_data=result, result_id=result_id)
+        return GenerateResult(status=0, message="Text generated", data=GenerateResultData(text_data=result, result_id=result_id))
     except NNException as exc:
         logging.error(f"Error in NN API while generating text: {exc}")
-        return GenerateResultModel(status=OperationResult(code=2, message=f"{exc}"), text_data="", result_id=-1)
+        return GenerateResult(status=2, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
     except DBException as exc:
         logging.error(f"Error in database while generating text: {exc}")
-        return GenerateResultModel(status=OperationResult(code=6, message=f"{exc}"), text_data="", result_id=-1)
+        return GenerateResult(status=6, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
 
 
-@app.post("/append_text", response_model=GenerateResultModel)
+@app.post("/append_text", response_model=GenerateResult)
 def append_text(data: GenerateQueryModel, Authorization=Header()):
     """
     Добавляет несколько слов или предложений к тексту запроса и возвращает только эти добавленные слова
@@ -170,11 +170,11 @@ def append_text(data: GenerateQueryModel, Authorization=Header()):
     try:
         auth_data = parse_query_string(Authorization)
         if not is_valid(query=auth_data, secret=config.client_secret):
-            return OperationResult(code=1, message="Authorization error")
+            return GenerateResult(status=1, message="Authorization error", data=GenerateResultData(text_data="", result_id=-1))
     except UtilsException as exc:
         logging.error(
             f"Error in utils, probably the request was not correct: {exc}")
-        return OperationResult(code=3, message=f"{exc}")
+        return GenerateResult(status=3, message="Authorization error", data=GenerateResultData(text_data="", result_id=-1))
 
     texts = data.context_data
     hint = data.hint
@@ -190,16 +190,16 @@ def append_text(data: GenerateQueryModel, Authorization=Header()):
         result = api.get_result()
         result_id = db.add_generated_data(hint, result)
         logging.info(f"/append_text\tlen(texts)={len(texts)}; hint={hint}\tOK")
-        return GenerateResultModel(status=OperationResult(code=0, message="Text appended"), text_data=result, result_id=result_id)
+        return GenerateResult(status=0, message="Text generated", data=GenerateResultData(text_data=result, result_id=result_id))
     except NNException as exc:
         logging.error(f"Error in NN API while generating text: {exc}")
-        return GenerateResultModel(status=OperationResult(code=2, message=f"{exc}"), text_data="", result_id=-1)
+        return GenerateResult(status=2, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
     except DBException as exc:
         logging.error(f"Error in database while generating text: {exc}")
-        return GenerateResultModel(status=OperationResult(code=6, message=f"{exc}"), text_data="", result_id=-1)
+        return GenerateResult(status=6, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
 
 
-@app.post("/rephrase_text", response_model=GenerateResultModel)
+@app.post("/rephrase_text", response_model=GenerateResult)
 def rephrase_text(data: GenerateQueryModel, Authorization=Header()):
     """
     Перефразирует поданный текст, возвращает текст примерно той же длины, но более складный по содержанию
@@ -212,11 +212,11 @@ def rephrase_text(data: GenerateQueryModel, Authorization=Header()):
     try:
         auth_data = parse_query_string(Authorization)
         if not is_valid(query=auth_data, secret=config.client_secret):
-            return OperationResult(code=1, message="Authorization error")
+            return GenerateResult(status=1, message="Authorization error", data=GenerateResultData(text_data="", result_id=-1))
     except UtilsException as exc:
         logging.error(
             f"Error in utils, probably the request was not correct: {exc}")
-        return OperationResult(code=3, message=f"{exc}")
+        return GenerateResult(status=3, message="Authorization error", data=GenerateResultData(text_data="", result_id=-1))
 
     texts = data.context_data
     hint = data.hint
@@ -233,16 +233,16 @@ def rephrase_text(data: GenerateQueryModel, Authorization=Header()):
         result_id = db.add_generated_data(hint, result)
         logging.info(
             f"/rephrase_text\tlen(texts)={len(texts)}; hint={hint}\tOK")
-        return GenerateResultModel(status=OperationResult(code=0, message="Text rephrased"), text_data=result, result_id=result_id)
+        return GenerateResult(status=0, message="Text generated", data=GenerateResultData(text_data=result, result_id=result_id))
     except NNException as exc:
         logging.error(f"Error in NN API while generating text: {exc}")
-        return GenerateResultModel(status=OperationResult(code=2, message=f"{exc}"), text_data="", result_id=-1)
+        return GenerateResult(status=2, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
     except DBException as exc:
         logging.error(f"Error in database while generating text: {exc}")
-        return GenerateResultModel(status=OperationResult(code=6, message=f"{exc}"), text_data="", result_id=-1)
+        return GenerateResult(status=6, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
 
 
-@app.post("/summarize_text", response_model=GenerateResultModel)
+@app.post("/summarize_text", response_model=GenerateResult)
 def summarize_text(data: GenerateQueryModel, Authorization=Header()):
     """
     Резюмирует поданный текст. Возвращает главную мысль текста в запросе в одно предложение
@@ -255,11 +255,11 @@ def summarize_text(data: GenerateQueryModel, Authorization=Header()):
     try:
         auth_data = parse_query_string(Authorization)
         if not is_valid(query=auth_data, secret=config.client_secret):
-            return OperationResult(code=1, message="Authorization error")
+            return GenerateResult(status=1, message="Authorization error", data=GenerateResultData(text_data="", result_id=-1))
     except UtilsException as exc:
         logging.error(
             f"Error in utils, probably the request was not correct: {exc}")
-        return OperationResult(code=3, message=f"{exc}")
+        return GenerateResult(status=3, message="Authorization error", data=GenerateResultData(text_data="", result_id=-1))
 
     texts = data.context_data
     hint = data.hint
@@ -276,15 +276,16 @@ def summarize_text(data: GenerateQueryModel, Authorization=Header()):
         result_id = db.add_generated_data(hint, result)
         logging.info(
             f"/summarize_text\tlen(texts)={len(texts)}; hint={hint}\tOK")
-        return GenerateResultModel(status=OperationResult(code=0, message="Text summarized"), text_data=result, result_id=result_id)
+        return GenerateResult(status=0, message="Text generated", data=GenerateResultData(text_data=result, result_id=result_id))
     except NNException as exc:
         logging.error(f"Error in NN API while generating text: {exc}")
-        return GenerateResultModel(status=OperationResult(code=2, message=f"{exc}"), text_data="", result_id=-1)
+        return GenerateResult(status=2, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
     except DBException as exc:
         logging.error(f"Error in database while generating text: {exc}")
-        return GenerateResultModel(status=OperationResult(code=6, message=f"{exc}"), text_data="", result_id=-1)
+        return GenerateResult(status=6, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
 
-@app.post("/unmask_text", response_model=GenerateResultModel)
+
+@app.post("/unmask_text", response_model=GenerateResult)
 def unmask_text(data: GenerateQueryModel, Authorization=Header()):
     """
     Заменяет `<MASK>` на наиболее подходящие слова или предложения. Возвращает только то, что нужно поставить на место `<MASK>`
@@ -297,11 +298,11 @@ def unmask_text(data: GenerateQueryModel, Authorization=Header()):
     try:
         auth_data = parse_query_string(Authorization)
         if not is_valid(query=auth_data, secret=config.client_secret):
-            return OperationResult(code=1, message="Authorization error")
+            return GenerateResult(status=1, message="Authorization error", data=GenerateResultData(text_data="", result_id=-1))
     except UtilsException as exc:
         logging.error(
             f"Error in utils, probably the request was not correct: {exc}")
-        return OperationResult(code=3, message=f"{exc}")
+        return GenerateResult(status=3, message="Authorization error", data=GenerateResultData(text_data="", result_id=-1))
 
     texts = data.context_data
     hint = data.hint
@@ -317,10 +318,10 @@ def unmask_text(data: GenerateQueryModel, Authorization=Header()):
         result = api.get_result()
         result_id = db.add_generated_data(hint, result)
         logging.info(f"/unmask_text\tlen(texts)={len(texts)}; hint={hint}\tOK")
-        return GenerateResultModel(status=OperationResult(code=0, message="Text unmasked"), text_data=result, result_id=result_id)
+        return GenerateResult(status=0, message="Text generated", data=GenerateResultData(text_data=result, result_id=result_id))
     except NNException as exc:
         logging.error(f"Error in NN API while generating text: {exc}")
-        return GenerateResultModel(status=OperationResult(code=2, message=f"{exc}"), text_data="", result_id=-1)
+        return GenerateResult(status=2, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
     except DBException as exc:
         logging.error(f"Error in database while generating text: {exc}")
-        return GenerateResultModel(status=OperationResult(code=6, message=f"{exc}"), text_data="", result_id=-1)
+        return GenerateResult(status=6, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))

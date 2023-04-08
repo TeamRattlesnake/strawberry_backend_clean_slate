@@ -5,23 +5,16 @@
 from pydantic import BaseModel
 
 
-class OperationResult(BaseModel):
+class FeedbackModel(BaseModel):
     """
-    Модель, описывающая результат операции. Содержит код ошибки и текстовое описание
+    Модель содержащая обратную связь по результаты руботы сервиса
 
-    code - int, статус операции:
-    * 0 - OK
-    * 1 - VK API Auth error
-    * 2 - NN API Auth error
-    * 3 - request error
-    * 4 - unknown error
-    * 5 - not implemented
-    * 6 - db error
+    result_id - номер результата работы сервиса.
 
-    message - str, текстовое описание статуса. Тут хранится текст исключения, если оно произошло
+    score - изменение оценки 1 или -1 (хотя можно и любое другое целое число)
     """
-    code: int
-    message: str
+    result_id: int
+    score: int
 
 
 class GenerateQueryModel(BaseModel):
@@ -36,29 +29,55 @@ class GenerateQueryModel(BaseModel):
     hint: str
 
 
-class GenerateResultModel(BaseModel):
+class SendFeedbackResult(BaseModel):
+    """
+    Модель, описывающая результат операции. Содержит код ошибки и текстовое описание
+
+    status - int, статус операции:
+    * 0 - OK
+    * 1 - VK API Auth error
+    * 2 - NN API Auth error
+    * 3 - request error
+    * 4 - unknown error
+    * 5 - not implemented
+    * 6 - db error
+
+    message - str, текстовое описание статуса. Тут хранится текст исключения, если оно произошло
+    """
+    status: int
+    message: str
+
+
+class GenerateResultData(BaseModel):
     """
     Модель с результатами генерации. Возвращает статус операции и текст с полезными данными, а такжеи айди результата (для обратной связи)
-
-
-    status - OperationResult, статус операции и строка с пояснением
 
     text_data - str, результат генерации
 
     result_id - int, айди результата генерации для отправки фидбека по нему
     """
-    status: OperationResult
     text_data: str
     result_id: int
 
 
-class FeedbackModel(BaseModel):
+class GenerateResult(BaseModel):
     """
-    Модель содержащая обратную связь по результаты руботы сервиса
+    Модель с результатами генерации. Возвращает статус операции и текст с полезными данными, а такжеи айди результата (для обратной связи)
 
-    result_id - номер результата работы сервиса.
 
-    score - изменение оценки 1 или -1 (хотя можно и любое другое целое число)
+    status - int, статус операции:
+    * 0 - OK
+    * 1 - VK API Auth error
+    * 2 - NN API Auth error
+    * 3 - request error
+    * 4 - unknown error
+    * 5 - not implemented
+    * 6 - db error
+
+    message - str, текстовое описание статуса. Тут хранится текст исключения, если оно произошло
+
+    data - GenerateResultData, text_data - str, результат генерации, result_id - int, айди результата генерации для отправки фидбека по нему
     """
-    result_id: int
-    score: int
+    status: int
+    message: str
+    data: GenerateResultData
