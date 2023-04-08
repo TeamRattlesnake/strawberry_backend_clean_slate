@@ -82,7 +82,7 @@ def startup():
 
 
 @app.post('/send_feedback', response_model=OperationResult)
-async def send_feedback(data: FeedbackModel, Authorization=Header()):
+def send_feedback(data: FeedbackModel, Authorization=Header()):
     """
     Оценить результат по айди
     """
@@ -94,7 +94,7 @@ async def send_feedback(data: FeedbackModel, Authorization=Header()):
     except UtilsException as exc:
         logging.error(
             f"Error in utils, probably the request was not correct: {exc}")
-        return OperationResult(code=3, message="Request error. Maybe it was not correct")
+        return OperationResult(code=3, message=f"{exc}")
 
     result_id = data.result_id
     score = data.score
@@ -107,11 +107,11 @@ async def send_feedback(data: FeedbackModel, Authorization=Header()):
         return OperationResult(code=0, message="Score updated")
     except DBException as exc:
         logging.error(f"Error in database: {exc}")
-        return OperationResult(code=6, message="Database error")
+        return OperationResult(code=6, message=f"{exc}")
 
 
 @app.post("/generate_text", response_model=GenerateResultModel)
-async def generate_text(data: GenerateQueryModel, Authorization=Header()):
+def generate_text(data: GenerateQueryModel, Authorization=Header()):
     """
     Пишет целый пост по текстовому описанию
     """
@@ -123,7 +123,7 @@ async def generate_text(data: GenerateQueryModel, Authorization=Header()):
     except UtilsException as exc:
         logging.error(
             f"Error in utils, probably the request was not correct: {exc}")
-        return OperationResult(code=3, message="Request error. Maybe it was not correct")
+        return OperationResult(code=3, message=f"{exc}")
 
     texts = data.context_data
     hint = data.hint
@@ -143,14 +143,14 @@ async def generate_text(data: GenerateQueryModel, Authorization=Header()):
         return GenerateResultModel(status=OperationResult(code=0, message="Text generated"), text_data=result, result_id=result_id)
     except NNException as exc:
         logging.error(f"Error in NN API while generating text: {exc}")
-        return GenerateResultModel(status=OperationResult(code=2, message="NN api error"), text_data="", result_id=-1)
+        return GenerateResultModel(status=OperationResult(code=2, message=f"{exc}"), text_data="", result_id=-1)
     except DBException as exc:
         logging.error(f"Error in database while generating text: {exc}")
-        return GenerateResultModel(status=OperationResult(code=6, message="Database error"), text_data="", result_id=-1)
+        return GenerateResultModel(status=OperationResult(code=6, message=f"{exc}"), text_data="", result_id=-1)
 
 
 @app.post("/append_text", response_model=GenerateResultModel)
-async def append_text(data: GenerateQueryModel, Authorization=Header()):
+def append_text(data: GenerateQueryModel, Authorization=Header()):
     """
     Добавляет несколько слов к затравке и возвращает все вместе
     """
@@ -162,7 +162,7 @@ async def append_text(data: GenerateQueryModel, Authorization=Header()):
     except UtilsException as exc:
         logging.error(
             f"Error in utils, probably the request was not correct: {exc}")
-        return OperationResult(code=3, message="Request error. Maybe it was not correct")
+        return OperationResult(code=3, message=f"{exc}")
 
     texts = data.context_data
     hint = data.hint
@@ -181,14 +181,14 @@ async def append_text(data: GenerateQueryModel, Authorization=Header()):
         return GenerateResultModel(status=OperationResult(code=0, message="Text appended"), text_data=result, result_id=result_id)
     except NNException as exc:
         logging.error(f"Error in NN API while generating text: {exc}")
-        return GenerateResultModel(status=OperationResult(code=2, message="NN api error"), text_data="", result_id=-1)
+        return GenerateResultModel(status=OperationResult(code=2, message=f"{exc}"), text_data="", result_id=-1)
     except DBException as exc:
         logging.error(f"Error in database while generating text: {exc}")
-        return GenerateResultModel(status=OperationResult(code=6, message="Database error"), text_data="", result_id=-1)
+        return GenerateResultModel(status=OperationResult(code=6, message=f"{exc}"), text_data="", result_id=-1)
 
 
 @app.post("/rephrase_text", response_model=GenerateResultModel)
-async def rephrase_text(data: GenerateQueryModel, Authorization=Header()):
+def rephrase_text(data: GenerateQueryModel, Authorization=Header()):
     """
     Перефразирует поданный текст
     """
@@ -200,7 +200,7 @@ async def rephrase_text(data: GenerateQueryModel, Authorization=Header()):
     except UtilsException as exc:
         logging.error(
             f"Error in utils, probably the request was not correct: {exc}")
-        return OperationResult(code=3, message="Request error. Maybe it was not correct")
+        return OperationResult(code=3, message=f"{exc}")
 
     texts = data.context_data
     hint = data.hint
@@ -220,14 +220,14 @@ async def rephrase_text(data: GenerateQueryModel, Authorization=Header()):
         return GenerateResultModel(status=OperationResult(code=0, message="Text rephrased"), text_data=result, result_id=result_id)
     except NNException as exc:
         logging.error(f"Error in NN API while generating text: {exc}")
-        return GenerateResultModel(status=OperationResult(code=2, message="NN api error"), text_data="", result_id=-1)
+        return GenerateResultModel(status=OperationResult(code=2, message=f"{exc}"), text_data="", result_id=-1)
     except DBException as exc:
         logging.error(f"Error in database while generating text: {exc}")
-        return GenerateResultModel(status=OperationResult(code=6, message="Database error"), text_data="", result_id=-1)
+        return GenerateResultModel(status=OperationResult(code=6, message=f"{exc}"), text_data="", result_id=-1)
 
 
 @app.post("/summarize_text", response_model=GenerateResultModel)
-async def summarize_text(data: GenerateQueryModel, Authorization=Header()):
+def summarize_text(data: GenerateQueryModel, Authorization=Header()):
     """
     Резюмирует поданный текст
     """
@@ -239,7 +239,7 @@ async def summarize_text(data: GenerateQueryModel, Authorization=Header()):
     except UtilsException as exc:
         logging.error(
             f"Error in utils, probably the request was not correct: {exc}")
-        return OperationResult(code=3, message="Request error. Maybe it was not correct")
+        return OperationResult(code=3, message=f"{exc}")
 
     texts = data.context_data
     hint = data.hint
@@ -259,14 +259,14 @@ async def summarize_text(data: GenerateQueryModel, Authorization=Header()):
         return GenerateResultModel(status=OperationResult(code=0, message="Text summarized"), text_data=result, result_id=result_id)
     except NNException as exc:
         logging.error(f"Error in NN API while generating text: {exc}")
-        return GenerateResultModel(status=OperationResult(code=2, message="NN api error"), text_data="", result_id=-1)
+        return GenerateResultModel(status=OperationResult(code=2, message=f"{exc}"), text_data="", result_id=-1)
     except DBException as exc:
         logging.error(f"Error in database while generating text: {exc}")
-        return GenerateResultModel(status=OperationResult(code=6, message="Database error"), text_data="", result_id=-1)
+        return GenerateResultModel(status=OperationResult(code=6, message=f"{exc}"), text_data="", result_id=-1)
 
 
 @app.post("/extend_text", response_model=GenerateResultModel)
-async def extend_text(data: GenerateQueryModel, Authorization=Header()):
+def extend_text(data: GenerateQueryModel, Authorization=Header()):
     """
     Удлиняет поданный текст
     """
@@ -278,7 +278,7 @@ async def extend_text(data: GenerateQueryModel, Authorization=Header()):
     except UtilsException as exc:
         logging.error(
             f"Error in utils, probably the request was not correct: {exc}")
-        return OperationResult(code=3, message="Request error. Maybe it was not correct")
+        return OperationResult(code=3, message=f"{exc}")
 
     texts = data.context_data
     hint = data.hint
@@ -297,16 +297,16 @@ async def extend_text(data: GenerateQueryModel, Authorization=Header()):
         return GenerateResultModel(status=OperationResult(code=0, message="Text extended"), text_data=result, result_id=result_id)
     except NNException as exc:
         logging.error(f"Error in NN API while generating text: {exc}")
-        return GenerateResultModel(status=OperationResult(code=2, message="NN api error"), text_data="", result_id=-1)
+        return GenerateResultModel(status=OperationResult(code=2, message=f"{exc}"), text_data="", result_id=-1)
     except DBException as exc:
         logging.error(f"Error in database while generating text: {exc}")
-        return GenerateResultModel(status=OperationResult(code=6, message="Database error"), text_data="", result_id=-1)
+        return GenerateResultModel(status=OperationResult(code=6, message=f"{exc}"), text_data="", result_id=-1)
 
 
 @app.post("/unmask_text", response_model=GenerateResultModel)
-async def unmask_text(data: GenerateQueryModel, Authorization=Header()):
+def unmask_text(data: GenerateQueryModel, Authorization=Header()):
     """
-    Заменяет [MASK] на наиболее подходящие слова
+    Заменяет <MASK> на наиболее подходящие слова
     """
 
     try:
@@ -316,7 +316,7 @@ async def unmask_text(data: GenerateQueryModel, Authorization=Header()):
     except UtilsException as exc:
         logging.error(
             f"Error in utils, probably the request was not correct: {exc}")
-        return OperationResult(code=3, message="Request error. Maybe it was not correct")
+        return OperationResult(code=3, message=f"{exc}")
 
     texts = data.context_data
     hint = data.hint
@@ -335,7 +335,7 @@ async def unmask_text(data: GenerateQueryModel, Authorization=Header()):
         return GenerateResultModel(status=OperationResult(code=0, message="Text unmasked"), text_data=result, result_id=result_id)
     except NNException as exc:
         logging.error(f"Error in NN API while generating text: {exc}")
-        return GenerateResultModel(status=OperationResult(code=2, message="NN api error"), text_data="", result_id=-1)
+        return GenerateResultModel(status=OperationResult(code=2, message=f"{exc}"), text_data="", result_id=-1)
     except DBException as exc:
         logging.error(f"Error in database while generating text: {exc}")
-        return GenerateResultModel(status=OperationResult(code=6, message="Database error"), text_data="", result_id=-1)
+        return GenerateResultModel(status=OperationResult(code=6, message=f"{exc}"), text_data="", result_id=-1)
