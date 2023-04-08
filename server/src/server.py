@@ -288,7 +288,7 @@ def summarize_text(data: GenerateQueryModel, Authorization=Header()):
 @app.post("/unmask_text", response_model=GenerateResult)
 def unmask_text(data: GenerateQueryModel, Authorization=Header()):
     """
-    Заменяет `<MASK>` на наиболее подходящие слова или предложения. Возвращает только то, что нужно поставить на место `<MASK>`
+    Заменяет `<MASK>` на наиболее подходящие слова или предложения. Возвращает текст, в котором все маски заменены на слова
 
     context_data - list[str], список текстов существующих постов в паблике (лучше не менее 3-5 непустых текстов )
 
