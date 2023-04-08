@@ -117,7 +117,7 @@ def send_feedback(data: FeedbackModel, Authorization=Header()):
 @app.post("/generate_text", response_model=GenerateResultModel)
 def generate_text(data: GenerateQueryModel, Authorization=Header()):
     """
-    Метод для получения целого текста по введенному запросу
+    Метод для получения текста на тему, заданную в запросе. Текст генерируется с нуля
 
     context_data - list[str], список текстов существующих постов в паблике (лучше не менее 3-5 непустых текстов )
 
@@ -160,7 +160,7 @@ def generate_text(data: GenerateQueryModel, Authorization=Header()):
 @app.post("/append_text", response_model=GenerateResultModel)
 def append_text(data: GenerateQueryModel, Authorization=Header()):
     """
-    Добавляет несколько слов или предложений к тексту запроса и возвращает эти добавленные слова
+    Добавляет несколько слов или предложений к тексту запроса и возвращает только эти добавленные слова
 
     context_data - list[str], список текстов существующих постов в паблике (лучше не менее 3-5 непустых текстов )
 
@@ -284,53 +284,10 @@ def summarize_text(data: GenerateQueryModel, Authorization=Header()):
         logging.error(f"Error in database while generating text: {exc}")
         return GenerateResultModel(status=OperationResult(code=6, message=f"{exc}"), text_data="", result_id=-1)
 
-
-@app.post("/extend_text", response_model=GenerateResultModel)
-def extend_text(data: GenerateQueryModel, Authorization=Header()):
-    """
-    Удлиняет поданный текст, работает как перефразирование, но еще и удлиняет
-
-    context_data - list[str], список текстов существующих постов в паблике (лучше не менее 3-5 непустых текстов )
-
-    hint - str, запрос на генерацию контента. Содержит текст, который надо удлинить
-    """
-
-    try:
-        auth_data = parse_query_string(Authorization)
-        if not is_valid(query=auth_data, secret=config.client_secret):
-            return OperationResult(code=1, message="Authorization error")
-    except UtilsException as exc:
-        logging.error(
-            f"Error in utils, probably the request was not correct: {exc}")
-        return OperationResult(code=3, message=f"{exc}")
-
-    texts = data.context_data
-    hint = data.hint
-    logging.info(f"/extend_text\tlen(texts)={len(texts)}; hint={hint}")
-
-    try:
-        api = NNApi(config.next_token())
-        api.load_context(config.extend_context_path)
-        api.prepare_query(texts, hint)
-        logging.info(
-            f"Ready to send request to ChatGPT with token={api.token}; query={api.query}")
-        api.send_request()
-        result = api.get_result()
-        result_id = db.add_generated_data(hint, result)
-        logging.info(f"/extend_text\tlen(texts)={len(texts)}; hint={hint}\tOK")
-        return GenerateResultModel(status=OperationResult(code=0, message="Text extended"), text_data=result, result_id=result_id)
-    except NNException as exc:
-        logging.error(f"Error in NN API while generating text: {exc}")
-        return GenerateResultModel(status=OperationResult(code=2, message=f"{exc}"), text_data="", result_id=-1)
-    except DBException as exc:
-        logging.error(f"Error in database while generating text: {exc}")
-        return GenerateResultModel(status=OperationResult(code=6, message=f"{exc}"), text_data="", result_id=-1)
-
-
 @app.post("/unmask_text", response_model=GenerateResultModel)
 def unmask_text(data: GenerateQueryModel, Authorization=Header()):
     """
-    Заменяет `<MASK>` на наиболее подходящие слова или предложения. Возвращает целый текст с замененным `<MASK>`
+    Заменяет `<MASK>` на наиболее подходящие слова или предложения. Возвращает только то, что нужно поставить на место `<MASK>`
 
     context_data - list[str], список текстов существующих постов в паблике (лучше не менее 3-5 непустых текстов )
 

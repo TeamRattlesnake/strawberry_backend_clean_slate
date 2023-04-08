@@ -27,7 +27,6 @@ class Config:
         self.append_context_path = data["append_context_path"]
         self.rephrase_context_path = data["rephrase_context_path"]
         self.summarize_context_path = data["summarize_context_path"]
-        self.extend_context_path = data["extend_context_path"]
         self.unmask_context_path = data["unmask_context_path"]
 
         self.api_tokens = data["api_tokens"]
