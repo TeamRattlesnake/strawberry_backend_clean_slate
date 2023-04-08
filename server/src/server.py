@@ -16,7 +16,7 @@ from utils import is_valid, parse_query_string, UtilsException
 from nn_api import NNException, NNApi
 
 logging.basicConfig(format="%(asctime)s %(message)s", handlers=[logging.FileHandler(
-    f"/home/logs/log_{time.ctime()}.txt", mode="w", encoding="UTF-8")], datefmt="%H:%M:%S UTC", level=logging.INFO)
+    f"/home/logs/log_{time.ctime().replace(' ', '_')}.txt", mode="w", encoding="UTF-8")], datefmt="%H:%M:%S UTC", level=logging.INFO)
 
 app = FastAPI()
 config = Config("config.json")
@@ -40,7 +40,7 @@ DESCRIPTION = """
 Выпускной проект ОЦ VK в МГТУ команды Team Rattlesnake. Сервис, генерирующий контент для социальной сети ВКонтакте. Посты генерируются сами с помощью нейросетей, также можно сократить, удлинить, продолжить, перефразировать текст и заменить часть текста. Станьте популярным в сети с помощью Strawberry!
 
 * Коленков Андрей - Team Lead, Backend Python Dev 🍓
-* Роман Медников - Frontend React Dev 🍓
+* Роман Медников - Frontend React Dev, ChatGPT Enthusiast 🍓
 * Василий Ермаков - Data Scientist 🍓
 
 """
@@ -68,7 +68,7 @@ app.openapi = custom_openapi
 @app.on_event("startup")
 def startup():
     """
-    При старте сервера проверить, нужна ли миграция и сделать ее, если да
+    При старте сервера проверить, нужна ли миграция и сделать ее, если нужна
     """
     logging.info("Server started")
     try:
@@ -78,7 +78,7 @@ def startup():
             logging.info("Creating tables...\tOK")
     except DBException as exc:
         logging.error(f"Error while checking tables: {exc}")
-        raise Exception(f"Error! {exc} Restarting...") from exc
+        raise Exception(f"Error! {exc} Shutting down...") from exc
 
 
 @app.post('/send_feedback', response_model=SendFeedbackResult)
@@ -88,7 +88,7 @@ def send_feedback(data: FeedbackModel, Authorization=Header()):
 
     result_id - int, номер результата работы сервиса.
 
-    score - int,  изменение оценки 1 или -1 (хотя можно и любое другое целое число)
+    score - int, оценка, теперь это не изменение, а само значение
     """
 
     try:
@@ -312,14 +312,64 @@ def summarize_text(data: GenerateQueryModel, Authorization=Header()):
         return GenerateResult(status=4, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
 
 
-@app.post("/unmask_text", response_model=GenerateResult)
-def unmask_text(data: GenerateQueryModel, Authorization=Header()):
+@app.post("/extend_text", response_model=GenerateResult)
+def extend_text(data: GenerateQueryModel, Authorization=Header()):
     """
-    Заменяет `<MASK>` на наиболее подходящие слова или предложения. Возвращает текст, в котором все маски заменены на слова
+    Расширяет поданный текст. Предполагается, что на вход идет уже большой осмысленный текст
+    и он становится еще более красочным и большим
 
     context_data - list[str], список текстов существующих постов в паблике (лучше не менее 3-5 непустых текстов )
 
-    hint - str, запрос на генерацию контента. Строка, в которой есть ключевое слово `<MASK>`
+    hint - str, запрос на генерацию контента. Содержит текст (лучше длинный), который надо сжать
+    """
+
+    try:
+        auth_data = parse_query_string(Authorization)
+        if not is_valid(query=auth_data, secret=config.client_secret):
+            return GenerateResult(status=1, message="Authorization error", data=GenerateResultData(text_data="", result_id=-1))
+    except UtilsException as exc:
+        logging.error(
+            f"Error in utils, probably the request was not correct: {exc}")
+        return GenerateResult(status=3, message="Authorization error", data=GenerateResultData(text_data="", result_id=-1))
+    except Exception as exc:
+        logging.error(f"Unknown error: {exc}")
+        return SendFeedbackResult(status=4, message=f"{exc}")
+
+    texts = data.context_data
+    hint = data.hint
+    logging.info(f"/extend_text\tlen(texts)={len(texts)}; hint={hint}")
+
+    try:
+        api = NNApi(config.next_token())
+        api.load_context(config.extend_context_path)
+        api.prepare_query(texts, hint)
+        logging.info(
+            f"Ready to send request to ChatGPT with token={api.token}; query={api.query}")
+        api.send_request()
+        result = api.get_result()
+        result_id = db.add_generated_data(hint, result)
+        logging.info(
+            f"/extend_text\tlen(texts)={len(texts)}; hint={hint}\tOK")
+        return GenerateResult(status=0, message="Text generated", data=GenerateResultData(text_data=result, result_id=result_id))
+    except NNException as exc:
+        logging.error(f"Error in NN API while generating text: {exc}")
+        return GenerateResult(status=2, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
+    except DBException as exc:
+        logging.error(f"Error in database while generating text: {exc}")
+        return GenerateResult(status=6, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
+    except Exception as exc:
+        logging.error(f"Unknown error: {exc}")
+        return GenerateResult(status=4, message=f"{exc}", data=GenerateResultData(text_data="", result_id=-1))
+
+
+@app.post("/unmask_text", response_model=GenerateResult)
+def unmask_text(data: GenerateQueryModel, Authorization=Header()):
+    """
+    Заменяет '<MASK>' на наиболее подходящие слова или предложения. Возвращает текст, в котором все маски заменены на слова
+
+    context_data - list[str], список текстов существующих постов в паблике (лучше не менее 3-5 непустых текстов )
+
+    hint - str, запрос на генерацию контента. Строка, в которой есть хотя бы одно ключевое слово '<MASK>'
     """
 
     try:

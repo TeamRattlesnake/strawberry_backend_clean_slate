@@ -9,9 +9,9 @@ class FeedbackModel(BaseModel):
     """
     Модель содержащая обратную связь по результаты руботы сервиса
 
-    result_id - номер результата работы сервиса.
+    result_id - int, номер результата работы сервиса.
 
-    score - изменение оценки 1 или -1 (хотя можно и любое другое целое число)
+    score - int, оценка результата
     """
     result_id: int
     score: int
@@ -36,7 +36,7 @@ class SendFeedbackResult(BaseModel):
     status - int, статус операции:
     * 0 - OK
     * 1 - VK API Auth error
-    * 2 - NN API Auth error
+    * 2 - NN API error
     * 3 - request error
     * 4 - unknown error
     * 5 - not implemented
@@ -68,7 +68,7 @@ class GenerateResult(BaseModel):
     status - int, статус операции:
     * 0 - OK
     * 1 - VK API Auth error
-    * 2 - NN API Auth error
+    * 2 - NN API error
     * 3 - request error
     * 4 - unknown error
     * 5 - not implemented
