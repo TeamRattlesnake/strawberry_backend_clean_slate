@@ -6,7 +6,7 @@ import json
 
 from revChatGPT.V1 import Chatbot
 
-MAX_WORDS_LEN = 2700
+MAX_WORDS_LEN = 2500
 
 
 class NNException(Exception):
@@ -46,9 +46,9 @@ class NNApi:
                 "Error in prepare_query: the request is too long (hint alone is larger than allowed input in model)")
 
         for text in sourse_texts_quoted:
-            while len(sourse_texts_string.split(" ")) + len(text.split(" ")) + len(hint.split(" ")) <= MAX_WORDS_LEN:
-                sourse_texts_string += f"{text}, "
-
+            if len(sourse_texts_string.split(" ")) + len(text.split(" ")) + len(hint.split(" ")) >= MAX_WORDS_LEN:
+                break
+            sourse_texts_string += f"{text}, "
         # Обрезать запятую и пробел
         sourse_texts_string = sourse_texts_string[:-2]
 
