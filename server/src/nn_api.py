@@ -2,11 +2,10 @@
 Модуль с реализацией общения с апи нейросетей
 """
 
-import json
-
 from revChatGPT.V1 import Chatbot
 
-MAX_WORDS_LEN = 2600
+MAX_WORDS_LEN = 2700
+NO_SOURCE_TEXTS_REPLACEMENT = "There are no source texts, just be creative. You must write your answer in the language of the given text"
 
 
 class NNException(Exception):
@@ -47,30 +46,39 @@ class NNApi:
         """
         Расставляет данные по шаблону контекста
         """
-        sourse_texts_quoted = ['"' + text + '"' for text in context_data]
-        sourse_texts_string = ""
+        try:
+            sourse_texts_quoted = ['"' + text + '"' for text in context_data]
+            sourse_texts_string = ""
 
-        if len(hint.split(" ")) >= MAX_WORDS_LEN:
-            raise NNException(
-                "Error in prepare_query: the request is too long (hint alone is larger than allowed input in model)"
-            )
+            if len(hint.split(" ")) >= MAX_WORDS_LEN:
+                raise NNException(
+                    "Error in prepare_query: the request is too long (hint alone is larger than allowed input in model)"
+                )
 
-        for text in sourse_texts_quoted:
-            # Собираем строку с постами чтобы она была не длиннее, чем нужно
+            for text in sourse_texts_quoted:
+                # Собираем строку с постами чтобы она была не длиннее, чем нужно
+                if (
+                    len(sourse_texts_string.split(" "))
+                    + len(text.split(" "))
+                    + len(hint.split(" "))
+                    >= MAX_WORDS_LEN
+                ):
+                    continue
+                sourse_texts_string += f"{text}, "
+            # Обрезать запятую и пробел
+            sourse_texts_string = sourse_texts_string[:-2]
+
             if (
-                len(sourse_texts_string.split(" "))
-                + len(text.split(" "))
-                + len(hint.split(" "))
-                >= MAX_WORDS_LEN
-            ):
-                continue
-            sourse_texts_string += f"{text}, "
-        # Обрезать запятую и пробел
-        sourse_texts_string = sourse_texts_string[:-2]
+                len(sourse_texts_string) > 5
+            ):  # Минимальная проверка на валидность контекста
+                self.query = self.context.replace("[1]", sourse_texts_string)
+            else:
+                self.query = self.context.replace("[1]", NO_SOURCE_TEXTS_REPLACEMENT)
 
-        self.query = self.context.replace("[1]", sourse_texts_string)
-        self.query = self.query.replace("[2]", hint)
-        self.query = self.query.strip()
+            self.query = self.query.replace("[2]", hint)
+            self.query = self.query.strip()
+        except Exception as exc:
+            raise NNException(f"Error in prepare_query: {exc}") from exc
 
     def send_request(self):
         """
@@ -79,14 +87,6 @@ class NNApi:
         try:
             for data in self.chatbot.ask(self.query):
                 self.result = data["message"]
-
-            json_response = json.loads(self.result)
-            if json_response["error"] is None:
-                self.result = json_response["result"]
-            else:
-                raise NNException(
-                    f"Error in send_request (generation failed): {json_response['error']}"
-                )
 
         except Exception as exc:
             raise NNException(f"Error in send_request: {exc}") from exc
