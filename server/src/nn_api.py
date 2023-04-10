@@ -4,7 +4,7 @@
 
 from revChatGPT.V1 import Chatbot
 
-MAX_WORDS_LEN = 2700
+MAX_WORDS_LEN = 2000
 NO_SOURCE_TEXTS_REPLACEMENT = "There are no source texts, just be creative. You must write your answer in the language of the given text"
 
 
