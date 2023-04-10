@@ -245,7 +245,7 @@ def append_text(data: GenerateQueryModel, Authorization=Header()):
         return GenerateResult(
             status=0,
             message="Text generated",
-            data=GenerateResultData(text_data=result, result_id=result_id),
+            data=GenerateResultData(text_data=f"{hint.strip()} {result.strip()}", result_id=result_id),
         )
     except NNException as exc:
         logging.error(f"Error in NN API while generating text: {exc}")
