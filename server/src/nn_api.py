@@ -4,8 +4,8 @@
 
 from revChatGPT.V1 import Chatbot
 
-MAX_WORDS_LEN = 2000
-NO_SOURCE_TEXTS_REPLACEMENT = "There are no source texts, just be creative. You must write your answer in the language of the given text"
+MAX_WORDS_LEN = 2800
+NO_SOURCE_TEXTS_REPLACEMENT = "There are no past texts, just be creative. You must write your answer in the language of the given text"
 
 
 class NNException(Exception):
@@ -51,18 +51,15 @@ class NNApi:
             sourse_texts_quoted = ['"' + text + '"' for text in context_data]
             source_texts_string = ""
 
-            if len(hint.split(" ")) >= MAX_WORDS_LEN:
+            if len(hint) >= MAX_WORDS_LEN:
                 raise NNException(
                     "Error in prepare_query: the request is too long (hint alone is larger than allowed input in model)"
                 )
 
             for text in sourse_texts_quoted:
-                # Собираем строку с постами чтобы она была не длиннее, чем нужно
-                if (
-                    len(source_texts_string.split(" "))
-                    + len(text.split(" "))
-                    + len(hint.split(" "))
-                ) >= MAX_WORDS_LEN:
+                # Собираем строку с постами чтобы она была не длиннее, чем нужно.
+                # Считаю не количество слов, а количество букв потому что токенизатор не любит русский
+                if (len(source_texts_string) + len(text) + len(hint)) >= MAX_WORDS_LEN:
                     continue
                 source_texts_string += f"{text}, "
             # Обрезать запятую и пробел
