@@ -130,13 +130,13 @@ class Database:
                 for row in response:
                     result += [
                         GenerateResultInfo(
-                            post_id=response[0],
-                            user_id=response[1],
-                            method=response[2],
-                            hint=response[3],
-                            text=response[4],
-                            rating=response[5],
-                            date=response[6],
+                            post_id=row[0],
+                            user_id=row[1],
+                            method=row[2],
+                            hint=row[3],
+                            text=row[4],
+                            rating=row[5],
+                            date=row[6],
                         )
                     ]
                 return result
