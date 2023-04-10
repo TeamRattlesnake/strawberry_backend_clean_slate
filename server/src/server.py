@@ -171,7 +171,7 @@ def get_user_results(offset=None, limit=None, Authorization=Header()):
     logging.info(f"/generate_text\tvk_user_id={user_id}")
 
     try:
-        generated_results = db.get_users_texts(user_id, offest, limit)
+        generated_results = db.get_users_texts(user_id, offset, limit)
         return UserResults(
             status=0,
             message="Results returned",
