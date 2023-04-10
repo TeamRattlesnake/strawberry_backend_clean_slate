@@ -26,6 +26,7 @@ class NNApi:
         self.chatbot = Chatbot(
             config={
                 "access_token": self.token,
+                "model": "gpt-4",
             }
         )
         self.context = ""
@@ -48,7 +49,7 @@ class NNApi:
         """
         try:
             sourse_texts_quoted = ['"' + text + '"' for text in context_data]
-            sourse_texts_string = ""
+            source_texts_string = ""
 
             if len(hint.split(" ")) >= MAX_WORDS_LEN:
                 raise NNException(
@@ -58,20 +59,20 @@ class NNApi:
             for text in sourse_texts_quoted:
                 # Собираем строку с постами чтобы она была не длиннее, чем нужно
                 if (
-                    len(sourse_texts_string.split(" "))
+                    (len(source_texts_string.split(" "))
                     + len(text.split(" "))
-                    + len(hint.split(" "))
+                    + len(hint.split(" ")))
                     >= MAX_WORDS_LEN
                 ):
                     continue
-                sourse_texts_string += f"{text}, "
+                source_texts_string += f"{text}, "
             # Обрезать запятую и пробел
-            sourse_texts_string = sourse_texts_string[:-2]
+            source_texts_string = source_texts_string[:-2]
 
             if (
-                len(sourse_texts_string) > 5
+                len(source_texts_string) > 5
             ):  # Минимальная проверка на валидность контекста
-                self.query = self.context.replace("[1]", sourse_texts_string)
+                self.query = self.context.replace("[1]", source_texts_string)
             else:
                 self.query = self.context.replace("[1]", NO_SOURCE_TEXTS_REPLACEMENT)
 
