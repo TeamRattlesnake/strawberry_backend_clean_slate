@@ -124,7 +124,8 @@ class Database:
                 if offset:
                     select_query = select_query.offset(offset)
 
-                response = select_query.fetchall()
+                response = connection.execute(select_query).fetchall()
+
                 result = []
                 for row in response:
                     result += [
