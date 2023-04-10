@@ -169,9 +169,6 @@ def generate_text(data: GenerateQueryModel, Authorization=Header()):
         api = NNApi(config.next_token())
         api.load_context(config.gen_context_path)
         api.prepare_query(texts, hint)
-        logging.info(
-            f"Ready to send request to ChatGPT with token={api.token}; query={api.query}"
-        )
         api.send_request()
         result = api.get_result()
         result_id = db.add_generated_data(hint, result)
@@ -241,9 +238,6 @@ def append_text(data: GenerateQueryModel, Authorization=Header()):
         api = NNApi(config.next_token())
         api.load_context(config.append_context_path)
         api.prepare_query(texts, hint)
-        logging.info(
-            f"Ready to send request to ChatGPT with token={api.token}; query={api.query}"
-        )
         api.send_request()
         result = api.get_result()
         result_id = db.add_generated_data(hint, result)
@@ -313,9 +307,6 @@ def rephrase_text(data: GenerateQueryModel, Authorization=Header()):
         api = NNApi(config.next_token())
         api.load_context(config.rephrase_context_path)
         api.prepare_query(texts, hint)
-        logging.info(
-            f"Ready to send request to ChatGPT with token={api.token}; query={api.query}"
-        )
         api.send_request()
         result = api.get_result()
         result_id = db.add_generated_data(hint, result)
@@ -385,9 +376,6 @@ def summarize_text(data: GenerateQueryModel, Authorization=Header()):
         api = NNApi(config.next_token())
         api.load_context(config.summarize_context_path)
         api.prepare_query(texts, hint)
-        logging.info(
-            f"Ready to send request to ChatGPT with token={api.token}; query={api.query}"
-        )
         api.send_request()
         result = api.get_result()
         result_id = db.add_generated_data(hint, result)
@@ -458,9 +446,6 @@ def extend_text(data: GenerateQueryModel, Authorization=Header()):
         api = NNApi(config.next_token())
         api.load_context(config.extend_context_path)
         api.prepare_query(texts, hint)
-        logging.info(
-            f"Ready to send request to ChatGPT with token={api.token}; query={api.query}"
-        )
         api.send_request()
         result = api.get_result()
         result_id = db.add_generated_data(hint, result)
@@ -530,9 +515,6 @@ def unmask_text(data: GenerateQueryModel, Authorization=Header()):
         api = NNApi(config.next_token())
         api.load_context(config.unmask_context_path)
         api.prepare_query(texts, hint)
-        logging.info(
-            f"Ready to send request to ChatGPT with token={api.token}; query={api.query}"
-        )
         api.send_request()
         result = api.get_result()
         result_id = db.add_generated_data(hint, result)

@@ -59,11 +59,10 @@ class NNApi:
             for text in sourse_texts_quoted:
                 # Собираем строку с постами чтобы она была не длиннее, чем нужно
                 if (
-                    (len(source_texts_string.split(" "))
+                    len(source_texts_string.split(" "))
                     + len(text.split(" "))
-                    + len(hint.split(" ")))
-                    >= MAX_WORDS_LEN
-                ):
+                    + len(hint.split(" "))
+                ) >= MAX_WORDS_LEN:
                     continue
                 source_texts_string += f"{text}, "
             # Обрезать запятую и пробел
