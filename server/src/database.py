@@ -37,8 +37,8 @@ class Database:
         self.generated_data = Table(
             "generated_data",
             self.meta,
-            Column("id", Integer, primary_key=True, nullable=False),
-            Column("user_id", Integer, primary_key=True, nullable=False),
+            Column("id", Integer, primary_key=True, nullable=False, autoincrement=True),
+            Column("user_id", Integer, nullable=False),
             Column("method", String(1024), nullable=False),
             Column("query", String(3072), nullable=False),
             Column("text", String(3072), nullable=False),
