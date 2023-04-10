@@ -49,6 +49,7 @@ class Database:
                 default=datetime.datetime.utcnow,
                 nullable=False,
             ),
+            Column("group_id", Integer, nullable=False),
         )
 
     def need_migration(self) -> bool:
@@ -72,7 +73,7 @@ class Database:
             raise DBException(f"Error in migrate: {exc}") from exc
 
     def add_generated_data(
-        self, query: str, text: str, user_id: str, gen_method: str
+        self, query: str, text: str, user_id: str, gen_method: str, group_id: int
     ) -> int:
         """
         Добавляет сгенерированный текст с нулевым рейтингом
@@ -80,7 +81,11 @@ class Database:
         try:
             with self.engine.connect() as connection:
                 insert_query = insert(self.generated_data).values(
-                    query=query, text=text, user_id=user_id, method=gen_method
+                    query=query,
+                    text=text,
+                    user_id=user_id,
+                    method=gen_method,
+                    group_id=group_id,
                 )
                 connection.execute(insert_query)
 
@@ -137,6 +142,7 @@ class Database:
                             text=row[4],
                             rating=row[5],
                             date=row[6],
+                            group_id=row[7],
                         )
                     ]
                 return result

@@ -12,7 +12,8 @@ NO_SOURCE_TEXTS_REPLACEMENT = "There are no past texts, just be creative. You mu
 
 class NNException(Exception):
     """
-    Класс исключения, связанного с подготовкой данных и отправкой запроса на апи нейросетей
+    Класс исключения, связанного с подготовкой данных и
+    отправкой запроса на апи нейросетей
     """
 
     pass
@@ -50,15 +51,16 @@ class NNApi:
         Расставляет данные по шаблону контекста
         """
         try:
-            sourse_texts_quoted = ['"' + text + '"' for text in context_data]
-            source_texts_string = ""
 
             if len(hint) >= MAX_WORDS_LEN:
                 raise NNException(
                     "Error in prepare_query: the request is too long (hint alone is larger than allowed input in model)"
                 )
 
-            for text in sourse_texts_quoted:
+            source_texts_quoted = ['"' + text + '"' for text in context_data]
+            source_texts_string = ""
+
+            for text in source_texts_quoted:
                 # Собираем строку с постами чтобы она была не длиннее, чем нужно.
                 # Считаю не количество слов, а количество букв потому что токенизатор не любит русский
                 if (len(source_texts_string) + len(text) + len(hint)) >= MAX_WORDS_LEN:
