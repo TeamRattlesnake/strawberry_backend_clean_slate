@@ -114,18 +114,27 @@ class Database:
             raise DBException(f"Error in change_rating: {exc}") from exc
 
     def get_users_texts(
-        self, user_id: int, offset: int, limit: int
+        self, group_id: int, user_id: int, offset: int, limit: int
     ) -> list[GenerateResultInfo]:
         """
         Выбирает всю информацию о текстах, сгенерированных юзером
         """
         try:
             with self.engine.connect() as connection:
-                select_query = select(self.generated_data).where(
-                    self.generated_data.c.user_id == user_id
-                )
+
+                if group_id:
+                    select_query = select(self.generated_data).where(
+                        self.generated_data.c.user_id == user_id,
+                        self.generated_data.c.group_id == group_id,
+                    )
+                else:
+                    select_query = select(self.generated_data).where(
+                        self.generated_data.c.user_id == user_id
+                    )
+
                 if limit:
                     select_query = select_query.limit(limit)
+
                 if offset:
                     select_query = select_query.offset(offset)
 

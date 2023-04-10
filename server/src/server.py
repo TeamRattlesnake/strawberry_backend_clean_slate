@@ -138,9 +138,13 @@ def send_feedback(data: FeedbackModel, Authorization=Header()):
 
 
 @app.get("/get_user_results", response_model=UserResults)
-def get_user_results(offset=None, limit=None, Authorization=Header()):
+def get_user_results(group_id=None, offset=None, limit=None, Authorization=Header()):
     """
     Метод для получения списка всех сгенерированных юзером текстов
+
+    group_id - int, необязательное, если указать его, то вернет все
+    записи для данного сообщества от данного юзера. Если не указать,
+    то все записи от данного юзера
 
     limit - int, необязательное, максимальное количество результатов
 
@@ -175,7 +179,7 @@ def get_user_results(offset=None, limit=None, Authorization=Header()):
     logging.info(f"/generate_text\tvk_user_id={user_id}")
 
     try:
-        generated_results = db.get_users_texts(user_id, offset, limit)
+        generated_results = db.get_users_texts(group_id, user_id, offset, limit)
         return UserResults(
             status=0,
             message="Results returned",
