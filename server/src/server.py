@@ -15,6 +15,7 @@ from models import (
     SendFeedbackResult,
     GenerateResultData,
     GenerateResult,
+    UserResults,
 )
 from config import Config
 from database import Database, DBException
@@ -132,6 +133,67 @@ def send_feedback(data: FeedbackModel, Authorization=Header()):
         return SendFeedbackResult(status=4, message=f"{exc}")
 
 
+@app.get("/get_user_results", response_model=UserResults)
+def get_user_results(offset=None, limit=None, Authorization=Header()):
+    """
+    Метод для получения списка всех сгенерированных юзером текстов
+
+    limit - int, необязательное, максимальное количество результатов
+
+    offest - int, необязательное, смещение
+    """
+
+    try:
+        auth_data = parse_query_string(Authorization)
+        if not is_valid(query=auth_data, secret=config.client_secret):
+            return UserResults(
+                status=1,
+                message="Authorization error",
+                data=[],
+            )
+    except UtilsException as exc:
+        logging.error(f"Error in utils, probably the request was not correct: {exc}")
+        return UserResults(
+            status=3,
+            message="Authorization error",
+            data=[],
+        )
+    except Exception as exc:
+        logging.error(f"Unknown error: {exc}")
+        return UserResults(
+            status=1,
+            message="Authorization error",
+            data=[],
+        )
+
+    user_id = auth_data["vk_user_id"]
+
+    logging.info(f"/generate_text\tvk_user_id={user_id}")
+
+    try:
+        generated_results = db.get_user_texsts(user_id, offest, limit)
+        return UserResults(
+            status=0,
+            message="Results returned",
+            data=generated_results,
+        )
+
+    except DBException as exc:
+        logging.error(f"Error in database while fetching user results text: {exc}")
+        return UserResults(
+            status=6,
+            message=f"{exc}",
+            data=[],
+        )
+    except Exception as exc:
+        logging.error(f"Unknown error: {exc}")
+        return UserResults(
+            status=4,
+            message=f"{exc}",
+            data=[],
+        )
+
+
 @app.post("/generate_text", response_model=GenerateResult)
 def generate_text(data: GenerateQueryModel, Authorization=Header()):
     """
@@ -159,10 +221,16 @@ def generate_text(data: GenerateQueryModel, Authorization=Header()):
         )
     except Exception as exc:
         logging.error(f"Unknown error: {exc}")
-        return SendFeedbackResult(status=4, message=f"{exc}")
+        return GenerateResult(
+            status=4,
+            message=f"{exc}",
+            data=GenerateResultData(text_data="", result_id=-1),
+        )
 
     texts = data.context_data
     hint = data.hint
+    user_id = auth_data["vk_user_id"]
+    gen_method = "generate_text"
     logging.info(f"/generate_text\tlen(texts)={len(texts)}; hint={hint}")
 
     try:
@@ -171,7 +239,7 @@ def generate_text(data: GenerateQueryModel, Authorization=Header()):
         api.prepare_query(texts, hint)
         api.send_request()
         result = api.get_result()
-        result_id = db.add_generated_data(hint, result)
+        result_id = db.add_generated_data(hint, result, user_id, gen_method)
         logging.info(f"/generate_text\tlen(texts)={len(texts)}; hint={hint}\tOK")
         return GenerateResult(
             status=0,
@@ -228,10 +296,16 @@ def append_text(data: GenerateQueryModel, Authorization=Header()):
         )
     except Exception as exc:
         logging.error(f"Unknown error: {exc}")
-        return SendFeedbackResult(status=4, message=f"{exc}")
+        return GenerateResult(
+            status=4,
+            message=f"{exc}",
+            data=GenerateResultData(text_data="", result_id=-1),
+        )
 
     texts = data.context_data
     hint = data.hint
+    user_id = auth_data["vk_user_id"]
+    gen_method = "append_text"
     logging.info(f"/append_text\tlen(texts)={len(texts)}; hint={hint}")
 
     try:
@@ -240,12 +314,14 @@ def append_text(data: GenerateQueryModel, Authorization=Header()):
         api.prepare_query(texts, hint)
         api.send_request()
         result = api.get_result()
-        result_id = db.add_generated_data(hint, result)
+        result_id = db.add_generated_data(hint, result, user_id, gen_method)
         logging.info(f"/append_text\tlen(texts)={len(texts)}; hint={hint}\tOK")
         return GenerateResult(
             status=0,
             message="Text generated",
-            data=GenerateResultData(text_data=f"{hint.strip()} {result.strip()}", result_id=result_id),
+            data=GenerateResultData(
+                text_data=f"{hint.strip()} {result.strip()}", result_id=result_id
+            ),
         )
     except NNException as exc:
         logging.error(f"Error in NN API while generating text: {exc}")
@@ -297,10 +373,16 @@ def rephrase_text(data: GenerateQueryModel, Authorization=Header()):
         )
     except Exception as exc:
         logging.error(f"Unknown error: {exc}")
-        return SendFeedbackResult(status=4, message=f"{exc}")
+        return GenerateResult(
+            status=4,
+            message=f"{exc}",
+            data=GenerateResultData(text_data="", result_id=-1),
+        )
 
     texts = data.context_data
     hint = data.hint
+    user_id = auth_data["vk_user_id"]
+    gen_method = "rephrase_text"
     logging.info(f"/rephrase_text\tlen(texts)={len(texts)}; hint={hint}")
 
     try:
@@ -309,7 +391,7 @@ def rephrase_text(data: GenerateQueryModel, Authorization=Header()):
         api.prepare_query(texts, hint)
         api.send_request()
         result = api.get_result()
-        result_id = db.add_generated_data(hint, result)
+        result_id = db.add_generated_data(hint, result, user_id, gen_method)
         logging.info(f"/rephrase_text\tlen(texts)={len(texts)}; hint={hint}\tOK")
         return GenerateResult(
             status=0,
@@ -366,10 +448,16 @@ def summarize_text(data: GenerateQueryModel, Authorization=Header()):
         )
     except Exception as exc:
         logging.error(f"Unknown error: {exc}")
-        return SendFeedbackResult(status=4, message=f"{exc}")
+        return GenerateResult(
+            status=4,
+            message=f"{exc}",
+            data=GenerateResultData(text_data="", result_id=-1),
+        )
 
     texts = data.context_data
     hint = data.hint
+    user_id = auth_data["vk_user_id"]
+    gen_method = "summarize_text"
     logging.info(f"/summarize_text\tlen(texts)={len(texts)}; hint={hint}")
 
     try:
@@ -378,7 +466,7 @@ def summarize_text(data: GenerateQueryModel, Authorization=Header()):
         api.prepare_query(texts, hint)
         api.send_request()
         result = api.get_result()
-        result_id = db.add_generated_data(hint, result)
+        result_id = db.add_generated_data(hint, result, user_id, gen_method)
         logging.info(f"/summarize_text\tlen(texts)={len(texts)}; hint={hint}\tOK")
         return GenerateResult(
             status=0,
@@ -436,10 +524,16 @@ def extend_text(data: GenerateQueryModel, Authorization=Header()):
         )
     except Exception as exc:
         logging.error(f"Unknown error: {exc}")
-        return SendFeedbackResult(status=4, message=f"{exc}")
+        return GenerateResult(
+            status=4,
+            message=f"{exc}",
+            data=GenerateResultData(text_data="", result_id=-1),
+        )
 
     texts = data.context_data
     hint = data.hint
+    user_id = auth_data["vk_user_id"]
+    gen_method = "extend_text"
     logging.info(f"/extend_text\tlen(texts)={len(texts)}; hint={hint}")
 
     try:
@@ -448,7 +542,7 @@ def extend_text(data: GenerateQueryModel, Authorization=Header()):
         api.prepare_query(texts, hint)
         api.send_request()
         result = api.get_result()
-        result_id = db.add_generated_data(hint, result)
+        result_id = db.add_generated_data(hint, result, user_id, gen_method)
         logging.info(f"/extend_text\tlen(texts)={len(texts)}; hint={hint}\tOK")
         return GenerateResult(
             status=0,
@@ -505,10 +599,16 @@ def unmask_text(data: GenerateQueryModel, Authorization=Header()):
         )
     except Exception as exc:
         logging.error(f"Unknown error: {exc}")
-        return SendFeedbackResult(status=4, message=f"{exc}")
+        return GenerateResult(
+            status=4,
+            message=f"{exc}",
+            data=GenerateResultData(text_data="", result_id=-1),
+        )
 
     texts = data.context_data
     hint = data.hint
+    user_id = auth_data["vk_user_id"]
+    gen_method = "unmask_text"
     logging.info(f"/unmask_text\tlen(texts)={len(texts)}; hint={hint}")
 
     try:
@@ -517,7 +617,7 @@ def unmask_text(data: GenerateQueryModel, Authorization=Header()):
         api.prepare_query(texts, hint)
         api.send_request()
         result = api.get_result()
-        result_id = db.add_generated_data(hint, result)
+        result_id = db.add_generated_data(hint, result, user_id, gen_method)
         logging.info(f"/unmask_text\tlen(texts)={len(texts)}; hint={hint}\tOK")
         return GenerateResult(
             status=0,

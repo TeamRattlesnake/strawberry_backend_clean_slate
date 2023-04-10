@@ -16,6 +16,7 @@ from sqlalchemy import (
     update,
     insert,
 )
+from models import GenerateResultInfo
 
 
 class DBException(Exception):
@@ -37,6 +38,8 @@ class Database:
             "generated_data",
             self.meta,
             Column("id", Integer, primary_key=True, nullable=False),
+            Column("user_id", Integer, primary_key=True, nullable=False),
+            Column("method", String(1024), nullable=False),
             Column("query", String(3072), nullable=False),
             Column("text", String(3072), nullable=False),
             Column("rating", Integer, nullable=False, default=0),
@@ -69,9 +72,7 @@ class Database:
             raise DBException(f"Error in migrate: {exc}") from exc
 
     def add_generated_data(
-        self,
-        query: str,
-        text: str,
+        self, query: str, text: str, user_id: str, gen_method: str
     ) -> int:
         """
         Добавляет сгенерированный текст с нулевым рейтингом
@@ -79,7 +80,7 @@ class Database:
         try:
             with self.engine.connect() as connection:
                 insert_query = insert(self.generated_data).values(
-                    query=query, text=text
+                    query=query, text=text, user_id=user_id, method=gen_method
                 )
                 connection.execute(insert_query)
 
@@ -106,3 +107,38 @@ class Database:
                 connection.execute(update_query)
         except Exception as exc:
             raise DBException(f"Error in change_rating: {exc}") from exc
+
+    def get_users_texts(
+        self, user_id: int, offset: int, limit: int
+    ) -> list[GenerateResultInfo]:
+        """
+        Выбирает всю информацию о текстах, сгенерированных юзером
+        """
+        try:
+            with self.engine.connect() as connection:
+                select_query = select(self.generated_data).where(
+                    self.generated_data.c.user_id == user_id
+                )
+                if limit:
+                    select_query = select_query.limit(limit)
+                if offset:
+                    select_query = select_query.offset(offset)
+
+                response = select_query.fetchall()
+                result = []
+                for row in response:
+                    result += [
+                        GenerateResultInfo(
+                            post_id=response[0],
+                            user_id=response[1],
+                            method=response[2],
+                            hint=response[3],
+                            text=response[4],
+                            rating=response[5],
+                            date=response[6],
+                        )
+                    ]
+                return result
+
+        except Exception as exc:
+            raise DBException(f"Error in get_users_texts: {exc}") from exc
