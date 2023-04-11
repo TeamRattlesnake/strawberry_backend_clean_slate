@@ -73,7 +73,7 @@ class NNApi:
                 len(source_texts_string) > 5
             ):  # Минимальная проверка на валидность контекста
                 self.query = self.context.replace("[1]", source_texts_string)
-            else:
+            else:  # Если контекст слишком маленький, то надо просто сказать нейросети быть креативной
                 self.query = self.context.replace("[1]", NO_SOURCE_TEXTS_REPLACEMENT)
 
             self.query = self.query.replace("[2]", hint)
