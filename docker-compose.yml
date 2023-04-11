@@ -15,6 +15,7 @@ services:
 
   mariadb:
     image: mariadb:latest
+    command: --max_allowed_packet=32505856
     volumes:
       - ./mariadb:/var/lib/mysql
     expose:
