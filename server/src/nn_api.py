@@ -60,7 +60,7 @@ class NNApi:
             source_texts_quoted = ['"' + text + '"' for text in context_data]
             source_texts_string = ""
 
-            for text in source_texts_quoted:
+            for text in source_texts_quoted[:3]:
                 # Собираем строку с постами чтобы она была не длиннее, чем нужно.
                 # Считаю не количество слов, а количество букв потому что токенизатор не любит русский
                 if (len(source_texts_string) + len(text) + len(hint)) >= MAX_WORDS_LEN:
