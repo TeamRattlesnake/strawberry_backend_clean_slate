@@ -70,7 +70,7 @@ class NNApi:
             source_texts_string = source_texts_string[:-2]
 
             if (
-                len(source_texts_string) > 5
+                len(source_texts_string) > 3
             ):  # Минимальная проверка на валидность контекста
                 self.query = self.context.replace("[1]", source_texts_string)
             else:  # Если контекст слишком маленький, то надо просто сказать нейросети быть креативной

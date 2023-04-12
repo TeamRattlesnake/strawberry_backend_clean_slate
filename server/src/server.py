@@ -270,6 +270,7 @@ def process_query(
         )
     except NNException as exc:
         logging.error(f"Error in NN API while generating text: {exc}")
+        logging.error(f"Error while senging this query: {api.query}")
         return GenerateResult(
             status=2,
             message=f"{exc}",
