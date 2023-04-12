@@ -263,6 +263,7 @@ def process_query(
 
         result = api.get_result()
         if gen_method == "append_text":
+            result = result.replace(hint, "")
             result = f"{hint} {result}"
 
         result_id = db.add_generated_data(hint, result, user_id, gen_method, group_id)
