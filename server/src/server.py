@@ -256,9 +256,10 @@ def process_query(
             api.load_context(config.unmask_context_path)
 
         api.prepare_query(texts, hint)
-        api.send_request()
 
         logging.info(f"Senging this query\n\n: {api.query} \n\n")
+
+        api.send_request()
 
         result = api.get_result()
         if gen_method == "append_text":
