@@ -257,6 +257,9 @@ def process_query(
 
         api.prepare_query(texts, hint)
         api.send_request()
+
+        logging.info(f"Senging this query\n\n: {api.query} \n\n")
+
         result = api.get_result()
         if gen_method == "append_text":
             result = f"{hint} {result}"
@@ -270,7 +273,6 @@ def process_query(
         )
     except NNException as exc:
         logging.error(f"Error in NN API while generating text: {exc}")
-        logging.error(f"Error while senging this query: {api.query}")
         return GenerateResult(
             status=2,
             message=f"{exc}",
