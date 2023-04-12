@@ -266,6 +266,7 @@ def process_query(
             result = f"{hint} {result}"
 
         result_id = db.add_generated_data(hint, result, user_id, gen_method, group_id)
+
         logging.info(f"/{gen_method}\tlen(texts)={len(texts)}; hint={hint}\tOK")
         return GenerateResult(
             status=0,

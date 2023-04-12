@@ -65,7 +65,7 @@ class NNApi:
                 # Считаю не количество слов, а количество букв потому что токенизатор не любит русский
                 if (len(source_texts_string) + len(text) + len(hint)) >= MAX_WORDS_LEN:
                     continue
-                source_texts_string += f"{text}, "
+                source_texts_string += f"{text},\n"
             # Обрезать запятую и пробел
             source_texts_string = source_texts_string[:-2]
 
