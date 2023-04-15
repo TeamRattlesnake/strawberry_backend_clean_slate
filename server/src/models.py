@@ -2,8 +2,20 @@
 Модуль с моделями
 """
 from datetime import datetime
+from enum import Enum
 
 from pydantic import BaseModel
+
+
+
+
+class Score(int, Enum):
+    """
+    Модель, модержащая лайк или дизайк
+    """
+
+    LIKE = 1
+    DISLIKE = -1
 
 
 class FeedbackModel(BaseModel):
@@ -13,11 +25,11 @@ class FeedbackModel(BaseModel):
 
     result_id - int, номер результата работы сервиса.
 
-    score - int, оценка результата
+    score - Score, оценка результата, -1 или 1
     """
 
     result_id: int
-    score: int
+    score: Score
 
 
 class GenerateQueryModel(BaseModel):

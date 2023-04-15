@@ -2,8 +2,6 @@
 Модуль с реализацией общения с апи нейросетей
 """
 
-import json
-
 from revChatGPT.V1 import Chatbot
 
 MAX_WORDS_LEN = 2800

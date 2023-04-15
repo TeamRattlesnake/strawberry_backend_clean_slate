@@ -110,7 +110,7 @@ def send_feedback(data: FeedbackModel, Authorization=Header()):
 
     result_id - int, номер результата работы сервиса.
 
-    score - int, оценка, теперь это не изменение, а само значение
+    score - int, оценка, -1 или +1.
     """
 
     try:
@@ -176,10 +176,15 @@ def get_user_results(group_id=None, offset=None, limit=None, Authorization=Heade
 
     user_id = auth_data["vk_user_id"]
 
-    logging.info(f"/generate_text\tvk_user_id={user_id}")
+    logging.info(
+        f"/get_user_results\tvk_user_id={user_id}; group_id={group_id}; offset={offset}; limit={limit}"
+    )
 
     try:
         generated_results = db.get_users_texts(group_id, user_id, offset, limit)
+        logging.info(
+            f"/get_user_results\tvk_user_id={user_id}; group_id={group_id}; offset={offset}; limit={limit}\tOK"
+        )
         return UserResults(
             status=0,
             message="Results returned",
