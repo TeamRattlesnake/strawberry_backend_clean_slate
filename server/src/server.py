@@ -122,7 +122,7 @@ def send_feedback(data: FeedbackModel, Authorization=Header()):
         return SendFeedbackResult(status=3, message=f"{exc}")
 
     result_id = data.result_id
-    score = data.score
+    score = int(data.score)
     logging.info(f"/send_feedback\tresult_id={result_id}; score={score}")
 
     try:
