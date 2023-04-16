@@ -63,7 +63,9 @@ class NNApi:
             for text in context_data:
                 # Собираем строку с постами чтобы она была не длиннее, чем нужно.
                 # Считаю не количество слов, а количество букв потому что токенизатор не любит русский
-                if (len(source_texts_string) + len(text) + len(hint)) >= MAX_WORDS_LEN:
+                if (
+                    len(source_texts_string) + len(text) + len(hint) + len(self.context)
+                ) >= MAX_WORDS_LEN:
                     continue
                 source_texts_string += f"{i}. {text}\n\n"
                 i += 1

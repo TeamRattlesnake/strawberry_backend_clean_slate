@@ -84,8 +84,8 @@ def custom_openapi():
         description=DESCRIPTION,
         routes=app.routes,
         contact={
-        "name": "Team Rattlesnake GitHub",
-        "url": "https://github.com/TeamRattlesnake",
+            "name": "Team Rattlesnake GitHub",
+            "url": "https://github.com/TeamRattlesnake",
         },
     )
     app.openapi_schema = openapi_schema
