@@ -7,8 +7,6 @@ from enum import Enum
 from pydantic import BaseModel
 
 
-
-
 class Score(int, Enum):
     """
     Модель, модержащая лайк или дизайк

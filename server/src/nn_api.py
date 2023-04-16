@@ -5,7 +5,9 @@
 from revChatGPT.V1 import Chatbot
 
 MAX_WORDS_LEN = 2800
-NO_SOURCE_TEXTS_REPLACEMENT = "There are no past texts, just be creative. You must write your answer in the language of the given text"
+NO_SOURCE_TEXTS_REPLACEMENT = "Старых текстов нет, так что придумай что-то креативное"
+OLD_TEXTS_PLACEHOLDER = "[OLD_TEXTS]"
+HINT_PLACEHOLDER = "[HINT]"
 
 
 class NNException(Exception):
@@ -70,11 +72,15 @@ class NNApi:
             if (
                 len(source_texts_string) > 3
             ):  # Минимальная проверка на валидность контекста
-                self.query = self.context.replace("[1]", source_texts_string)
+                self.query = self.context.replace(
+                    OLD_TEXTS_PLACEHOLDER, source_texts_string
+                )
             else:  # Если контекст слишком маленький, то надо просто сказать нейросети быть креативной
-                self.query = self.context.replace("[1]", NO_SOURCE_TEXTS_REPLACEMENT)
+                self.query = self.context.replace(
+                    OLD_TEXTS_PLACEHOLDER, NO_SOURCE_TEXTS_REPLACEMENT
+                )
 
-            self.query = self.query.replace("[2]", hint)
+            self.query = self.query.replace(HINT_PLACEHOLDER, hint)
             self.query = self.query.strip()
         except Exception as exc:
             raise NNException(f"Error in prepare_query: {exc}") from exc

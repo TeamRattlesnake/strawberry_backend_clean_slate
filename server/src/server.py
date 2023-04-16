@@ -58,12 +58,17 @@ DESCRIPTION = """
 Выпускной проект ОЦ VK в МГТУ команды Team Rattlesnake. Сервис, генерирующий
 контент для социальной сети ВКонтакте. Посты генерируются сами с помощью
 нейросетей, также можно сократить, удлинить, продолжить, перефразировать
-текст и заменить часть текста. Станьте популярным в сети с помощью Strawberry!
+текст и заменить часть текста. Представляет собой VK MiniAPP, который удобно
+использовать и с компьютера, и со смартфона. Станьте популярным в сети с помощью
+Strawberry!
 
 * Коленков Андрей - Team Lead, Backend Python Dev 🍓
 * Роман Медников - Frontend React Dev, ChatGPT Enthusiast 🍓
 * Василий Ермаков - Data Scientist 🍓
 
+Наш паблик: [Strawberry - Помощник в ведении сообщества](https://vk.com/strawberry_ai)
+
+Приложение работает: [Strawberry](https://vk.com/app51575840_226476923)
 """
 
 
@@ -75,9 +80,13 @@ def custom_openapi():
         return app.openapi_schema
     openapi_schema = get_openapi(
         title="Strawberry🍓",
-        version="1.0.0 MVP - Clean Slate",
+        version="1.0.0 - Clean Slate",
         description=DESCRIPTION,
         routes=app.routes,
+        contact={
+        "name": "Team Rattlesnake GitHub",
+        "url": "https://github.com/TeamRattlesnake",
+        },
     )
     app.openapi_schema = openapi_schema
     return app.openapi_schema
@@ -110,7 +119,7 @@ def send_feedback(data: FeedbackModel, Authorization=Header()):
 
     result_id - int, номер результата работы сервиса.
 
-    score - int, оценка, -1 или +1.
+    score - int, оценка, -1 или 1.
     """
 
     try:
