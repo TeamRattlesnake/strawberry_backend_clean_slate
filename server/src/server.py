@@ -271,7 +271,7 @@ def process_query(
 
         api.prepare_query(texts, hint)
 
-        logging.info(f"Senging this query\n\n: {api.query} \n\n")
+        logging.info(f"Senging this query:\n\n {api.query} \n\n")
 
         api.send_request()
 
