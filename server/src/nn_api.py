@@ -57,17 +57,16 @@ class NNApi:
                     "Error in prepare_query: the request is too long (hint alone is larger than allowed input in model)"
                 )
 
-            source_texts_quoted = ['"' + text + '"' for text in context_data]
             source_texts_string = ""
 
-            for text in source_texts_quoted:
+            i = 1
+            for text in context_data:
                 # Собираем строку с постами чтобы она была не длиннее, чем нужно.
                 # Считаю не количество слов, а количество букв потому что токенизатор не любит русский
                 if (len(source_texts_string) + len(text) + len(hint)) >= MAX_WORDS_LEN:
                     continue
-                source_texts_string += f"{text},\n"
-            # Обрезать запятую и пробел
-            source_texts_string = source_texts_string[:-2]
+                source_texts_string += f"{i}. {text}\n\n"
+                i += 1
 
             if (
                 len(source_texts_string) > 3
