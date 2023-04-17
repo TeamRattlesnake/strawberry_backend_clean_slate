@@ -8,6 +8,7 @@ services:
       dockerfile: ./Dockerfile
     depends_on:
       - mariadb
+    restart: on-failure
     volumes:
       - ./logs:/home/logs
     ports:
@@ -25,7 +26,9 @@ services:
 
   pma:
     image: phpmyadmin:latest
-    restart: always
+    depends_on:
+      - mariadb
+    restart: on-failure
     ports:
       - 3307:80
     environment:
