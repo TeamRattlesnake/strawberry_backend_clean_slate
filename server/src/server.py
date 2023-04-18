@@ -19,7 +19,7 @@ from models import (
 )
 from config import Config
 from database import Database, DBException
-from utils import is_valid, parse_query_string, UtilsException
+from utils import is_valid, parse_query_string, filter_stop_words, UtilsException
 from nn_api import NNException, NNApi
 
 logging.basicConfig(
@@ -268,6 +268,9 @@ def process_query(
             api.load_context(config.extend_context_path)
         elif gen_method == "unmask_text":
             api.load_context(config.unmask_context_path)
+
+        texts = filter_stop_words(strings=texts)
+        hint = filter_stop_words(string=hint)
 
         api.prepare_query(texts, hint)
 
