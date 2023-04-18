@@ -269,8 +269,8 @@ def process_query(
         elif gen_method == "unmask_text":
             api.load_context(config.unmask_context_path)
 
-        texts = filter_stop_words(strings=texts)
-        hint = filter_stop_words(string=hint)
+        texts = [filter_stop_words(text) for text in texts]
+        hint = filter_stop_words(hint)
 
         api.prepare_query(texts, hint)
 

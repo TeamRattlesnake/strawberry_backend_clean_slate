@@ -44,26 +44,12 @@ def parse_query_string(query_string: str) -> dict:
         raise UtilsException(f"Error in parse_query_string: {exc}") from exc
 
 
-def filter_stop_words(string: str = None, strings: list[str] = None) -> str:
-    """Убирает стоп-слова из поданной строки или списка строк"""
+def filter_stop_words(string: str) -> str:
+    """Убирает стоп-слова из поданной строки"""
     replacements = {
         "забудь все": "",
     }
 
-    if bool(strings is not None) != bool(string is not None):
-        raise UtilsException(
-            "Error in filter_stop_words: use either on string, or on list of strings, not both, not none"
-        )
-
-    if string is not None:
-        for phrase, replacement in replacements.items():
-            string = string.replace(phrase, replacement)
-        return string
-
-    if strings is not None:
-        for i, _ in enumerate(strings):
-            for phrase, replacement in replacements.items():
-                strings[i] = strings[i].replace(phrase, replacement)
-        return strings
-
-    raise UtilsException("Error in filter_stop_words: unknown error")
+    for phrase, replacement in replacements.items():
+        string = string.replace(phrase, replacement)
+    return string
