@@ -20,10 +20,14 @@ class UtilsException(Exception):
 def is_valid(*, query: dict, secret: str) -> bool:
     """Проверяет подпись у запроса из Миниаппа"""
     try:
-        vk_subset = OrderedDict(sorted(x for x in query.items() if x[0][:3] == "vk_"))
+        vk_subset = OrderedDict(
+            sorted(x for x in query.items() if x[0][:3] == "vk_")
+        )
         hash_code = b64encode(
             HMAC(
-                secret.encode(), urlencode(vk_subset, doseq=True).encode(), sha256
+                secret.encode(),
+                urlencode(vk_subset, doseq=True).encode(),
+                sha256,
             ).digest()
         )
         decoded_hash_code = (

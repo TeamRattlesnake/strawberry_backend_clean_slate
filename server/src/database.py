@@ -41,7 +41,13 @@ class Database:
         self.generated_data = Table(
             "generated_data",
             self.meta,
-            Column("id", Integer, primary_key=True, nullable=False, autoincrement=True),
+            Column(
+                "id",
+                Integer,
+                primary_key=True,
+                nullable=False,
+                autoincrement=True,
+            ),
             Column("user_id", Integer, nullable=False),
             Column("method", String(1024), nullable=False),
             Column("query", String(3072), nullable=False),
@@ -77,7 +83,12 @@ class Database:
             raise DBException(f"Error in migrate: {exc}") from exc
 
     def add_generated_data(
-        self, query: str, text: str, user_id: str, gen_method: str, group_id: int
+        self,
+        query: str,
+        text: str,
+        user_id: str,
+        gen_method: str,
+        group_id: int,
     ) -> int:
         """
         Добавляет сгенерированный текст с нулевым рейтингом

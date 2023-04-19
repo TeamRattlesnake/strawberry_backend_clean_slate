@@ -19,7 +19,12 @@ from models import (
 )
 from config import Config
 from database import Database, DBException
-from utils import is_valid, parse_query_string, filter_stop_words, UtilsException
+from utils import (
+    is_valid,
+    parse_query_string,
+    filter_stop_words,
+    UtilsException,
+)
 from nn_api import NNException, NNApi
 
 logging.basicConfig(
@@ -38,7 +43,11 @@ logging.basicConfig(
 app = FastAPI()
 config = Config("config.json")
 db = Database(
-    config.db_user, config.db_password, config.db_name, config.db_port, config.db_host
+    config.db_user,
+    config.db_password,
+    config.db_name,
+    config.db_port,
+    config.db_host,
 )
 
 origins = [
@@ -127,9 +136,12 @@ def send_feedback(data: FeedbackModel, Authorization=Header()):
         if not is_valid(query=auth_data, secret=config.client_secret):
             return SendFeedbackResult(status=1, message="Authorization error")
     except UtilsException as exc:
-        logging.error(f"Error in utils, probably the request was not correct: {exc}")
+        logging.error(
+            f"Error in utils, probably the request was not correct: {exc}"
+        )
         return SendFeedbackResult(
-            status=3, message="Error in utils, probably the request was not correct"
+            status=3,
+            message="Error in utils, probably the request was not correct",
         )
 
     result_id = data.result_id
@@ -138,7 +150,9 @@ def send_feedback(data: FeedbackModel, Authorization=Header()):
 
     try:
         db.change_rating(result_id, score)
-        logging.info(f"/send_feedback\tresult_id={result_id}; score={score}\tOK")
+        logging.info(
+            f"/send_feedback\tresult_id={result_id}; score={score}\tOK"
+        )
         return SendFeedbackResult(status=0, message="Score updated")
     except DBException as exc:
         logging.error(f"Error in database: {exc}")
@@ -149,7 +163,9 @@ def send_feedback(data: FeedbackModel, Authorization=Header()):
 
 
 @app.get("/get_user_results", response_model=UserResults)
-def get_user_results(group_id=None, offset=None, limit=None, Authorization=Header()):
+def get_user_results(
+    group_id=None, offset=None, limit=None, Authorization=Header()
+):
     """
     Метод для получения списка всех сгенерированных юзером текстов
 
@@ -171,7 +187,9 @@ def get_user_results(group_id=None, offset=None, limit=None, Authorization=Heade
                 data=[],
             )
     except UtilsException as exc:
-        logging.error(f"Error in utils, probably the request was not correct: {exc}")
+        logging.error(
+            f"Error in utils, probably the request was not correct: {exc}"
+        )
         return UserResults(
             status=3,
             message="Authorization error",
@@ -203,7 +221,9 @@ def get_user_results(group_id=None, offset=None, limit=None, Authorization=Heade
         )
 
     except DBException as exc:
-        logging.error(f"Error in database while fetching user results text: {exc}")
+        logging.error(
+            f"Error in database while fetching user results text: {exc}"
+        )
         return UserResults(
             status=6,
             message="Error in database while fetching user results text",
@@ -233,7 +253,9 @@ def process_query(
                 data=GenerateResultData(text_data="", result_id=-1),
             )
     except UtilsException as exc:
-        logging.error(f"Error in utils, probably the request was not correct: {exc}")
+        logging.error(
+            f"Error in utils, probably the request was not correct: {exc}"
+        )
         return GenerateResult(
             status=3,
             message="Authorization error",
@@ -276,8 +298,6 @@ def process_query(
 
         api.prepare_query(texts, hint)
 
-        logging.info(f"Senging this query:\n\n {api.query} \n\n")
-
         api.send_request()
 
         result = api.get_result()
@@ -285,7 +305,9 @@ def process_query(
             result = result.replace(hint, "")
             result = f"{hint} {result}"
 
-        result_id = db.add_generated_data(hint, result, user_id, gen_method, group_id)
+        result_id = db.add_generated_data(
+            hint, result, user_id, gen_method, group_id
+        )
 
         logging.info(f"/{gen_method}\tlen(texts)={len(texts)}; hint={hint}\tOK")
         return GenerateResult(

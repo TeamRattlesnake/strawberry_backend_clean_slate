@@ -5,7 +5,9 @@
 from revChatGPT.V1 import Chatbot
 
 MAX_WORDS_LEN = 2800
-NO_SOURCE_TEXTS_REPLACEMENT = "Старых текстов нет, так что придумай что-то креативное"
+NO_SOURCE_TEXTS_REPLACEMENT = (
+    "Старых текстов нет, так что придумай что-то креативное"
+)
 OLD_TEXTS_PLACEHOLDER = "[OLD_TEXTS]"
 HINT_PLACEHOLDER = "[HINT]"
 
@@ -29,7 +31,6 @@ class NNApi:
         self.chatbot = Chatbot(
             config={
                 "access_token": self.token,
-                "model": "gpt-4",
             }
         )
         self.context = ""
@@ -69,7 +70,10 @@ class NNApi:
                 # Собираем строку с постами чтобы она была не длиннее, чем нужно.
                 # Считаю не количество слов, а количество букв потому что токенизатор не любит русский
                 if (
-                    len(source_texts_string) + len(text) + len(hint) + len(self.context)
+                    len(source_texts_string)
+                    + len(text)
+                    + len(hint)
+                    + len(self.context)
                 ) >= MAX_WORDS_LEN:
                     continue
                 source_texts_string += f"{i}. {text}\n\n"
