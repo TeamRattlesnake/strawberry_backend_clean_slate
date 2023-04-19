@@ -109,7 +109,7 @@ def startup():
             logging.info("Creating tables...\tOK")
     except DBException as exc:
         logging.error(f"Error while checking tables: {exc}")
-        raise Exception(f"Error! {exc} Shutting down...") from exc
+        raise Exception("Error! Shutting down...") from exc
 
 
 @app.post("/send_feedback", response_model=SendFeedbackResult)
@@ -128,7 +128,9 @@ def send_feedback(data: FeedbackModel, Authorization=Header()):
             return SendFeedbackResult(status=1, message="Authorization error")
     except UtilsException as exc:
         logging.error(f"Error in utils, probably the request was not correct: {exc}")
-        return SendFeedbackResult(status=3, message=f"{exc}")
+        return SendFeedbackResult(
+            status=3, message="Error in utils, probably the request was not correct"
+        )
 
     result_id = data.result_id
     score = int(data.score)
@@ -140,10 +142,10 @@ def send_feedback(data: FeedbackModel, Authorization=Header()):
         return SendFeedbackResult(status=0, message="Score updated")
     except DBException as exc:
         logging.error(f"Error in database: {exc}")
-        return SendFeedbackResult(status=6, message=f"{exc}")
+        return SendFeedbackResult(status=6, message="Error in database")
     except Exception as exc:
         logging.error(f"Unknown error: {exc}")
-        return SendFeedbackResult(status=4, message=f"{exc}")
+        return SendFeedbackResult(status=4, message="Unknown error")
 
 
 @app.get("/get_user_results", response_model=UserResults)
@@ -204,14 +206,14 @@ def get_user_results(group_id=None, offset=None, limit=None, Authorization=Heade
         logging.error(f"Error in database while fetching user results text: {exc}")
         return UserResults(
             status=6,
-            message=f"{exc}",
+            message="Error in database while fetching user results text",
             data=[],
         )
     except Exception as exc:
         logging.error(f"Unknown error: {exc}")
         return UserResults(
             status=4,
-            message=f"{exc}",
+            message="Unknown error",
             data=[],
         )
 
@@ -241,7 +243,7 @@ def process_query(
         logging.error(f"Unknown error: {exc}")
         return GenerateResult(
             status=4,
-            message=f"{exc}",
+            message="Unknown error",
             data=GenerateResultData(text_data="", result_id=-1),
         )
 
@@ -295,21 +297,21 @@ def process_query(
         logging.error(f"Error in NN API while generating text: {exc}")
         return GenerateResult(
             status=2,
-            message=f"{exc}",
+            message="Error in NN API while generating text",
             data=GenerateResultData(text_data="", result_id=-1),
         )
     except DBException as exc:
         logging.error(f"Error in database while generating text: {exc}")
         return GenerateResult(
             status=6,
-            message=f"{exc}",
+            message="Error in database while generating text",
             data=GenerateResultData(text_data="", result_id=-1),
         )
     except Exception as exc:
         logging.error(f"Unknown error: {exc}")
         return GenerateResult(
             status=4,
-            message=f"{exc}",
+            message="Unknown error",
             data=GenerateResultData(text_data="", result_id=-1),
         )
 

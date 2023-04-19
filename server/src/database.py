@@ -28,6 +28,10 @@ class DBException(Exception):
 
 
 class Database:
+    """
+    Класс с логикой для взаимодействия с базой данных MariaDB/MySQL
+    """
+
     def __init__(self, user, password, database, port, host):
         self.database_uri = f"mysql+pymysql://{user}:{password}@{host}:{port}/{database}?charset=utf8mb4"
         self.engine = create_engine(self.database_uri)

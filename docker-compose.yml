@@ -16,7 +16,10 @@ services:
 
   mariadb:
     image: mariadb:latest
-    command: --max_allowed_packet=32505856
+    command: [
+            '--max_allowed_packet=32505856',
+            '--wait-timeout=604800',
+        ]
     volumes:
       - ./mariadb:/var/lib/mysql
     expose:

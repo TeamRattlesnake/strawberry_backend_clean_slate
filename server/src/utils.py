@@ -45,9 +45,10 @@ def parse_query_string(query_string: str) -> dict:
 
 
 def filter_stop_words(string: str) -> str:
-    """Убирает стоп-слова из поданной строки"""
+    """Заменяет стоп-слова в поданной строке"""
     replacements = {
-        "забудь все": "",
+        "сгенерируй мне": "",
+        "сгенерируй": "",
     }
 
     for phrase, replacement in replacements.items():
