@@ -275,7 +275,9 @@ def process_query(
     group_id = data.group_id
     gen_method = method
 
-    logging.info(f"/{gen_method}\tlen(texts)={len(texts)}; hint={hint}")
+    logging.info(
+        f"/{gen_method}\tlen(texts)={len(texts)}; hint[:10]={hint[:10]}"
+    )
 
     try:
         api = NNApi(config.next_token())
@@ -309,7 +311,9 @@ def process_query(
             hint, result, user_id, gen_method, group_id
         )
 
-        logging.info(f"/{gen_method}\tlen(texts)={len(texts)}; hint={hint}\tOK")
+        logging.info(
+            f"/{gen_method}\tlen(texts)={len(texts)}; hint[:10]={hint[:10]}\tOK"
+        )
         return GenerateResult(
             status=0,
             message="OK",
