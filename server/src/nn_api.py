@@ -6,7 +6,7 @@ from revChatGPT.V1 import Chatbot
 
 MAX_WORDS_LEN = 2800
 NO_SOURCE_TEXTS_REPLACEMENT = (
-    "Старых текстов нет, так что придумай что-то креативное"
+    "Старых постов в сообществе нет, так что придумай что-то креативное"
 )
 OLD_TEXTS_PLACEHOLDER = "[OLD_TEXTS]"
 HINT_PLACEHOLDER = "[HINT]"
@@ -23,7 +23,7 @@ class NNException(Exception):
 
 class NNApi:
     """
-    Базовый класс. Нужно реализовать только prepare_query
+    Класс для подготовки запросов и общения с API ChatGPT
     """
 
     def __init__(self, token):
