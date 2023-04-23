@@ -277,7 +277,7 @@ def process_query(
     gen_method = method
 
     logging.info(
-        f"/{gen_method}\tlen(texts)={len(texts)}; hint[:10]={hint[:10]}"
+        f"/{gen_method}\tlen(texts)={len(texts)}; hint[:20]={hint[:20]}"
     )
 
     try:
