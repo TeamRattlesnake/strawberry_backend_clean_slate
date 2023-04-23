@@ -7,6 +7,7 @@ from collections import OrderedDict
 from hashlib import sha256
 from urllib.parse import urlencode
 from hmac import HMAC
+import re
 
 
 class UtilsException(Exception):
@@ -48,13 +49,21 @@ def parse_query_string(query_string: str) -> dict:
         raise UtilsException(f"Error in parse_query_string: {exc}") from exc
 
 
-def filter_stop_words(string: str) -> str:
+def replace_stop_words(string: str) -> str:
     """Заменяет стоп-слова в переданной строке"""
     replacements = {
         "[HINT]": "",
         "[OLD_TEXTS]": "",
+        "<MASK>": " <MASK> ",
     }
 
     for phrase, replacement in replacements.items():
         string = string.replace(phrase, replacement)
+    return string
+
+
+def prepare_string(string: str) -> str:
+    """Очищает строку от лишних пробелов"""
+    string = string.strip()
+    string = re.sub(" +", " ", string)
     return string

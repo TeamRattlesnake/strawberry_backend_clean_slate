@@ -22,7 +22,8 @@ from database import Database, DBException
 from utils import (
     is_valid,
     parse_query_string,
-    filter_stop_words,
+    replace_stop_words,
+    prepare_string,
     UtilsException,
 )
 from nn_api import NNException, NNApi
@@ -199,7 +200,7 @@ def get_user_results(
         logging.error(f"Unknown error: {exc}")
         return UserResults(
             status=1,
-            message="Authorization error",
+            message="Unknown error",
             data=[],
         )
 
@@ -295,14 +296,15 @@ def process_query(
         elif gen_method == "unmask_text":
             api.load_context(config.unmask_context_path)
 
-        texts = [filter_stop_words(text) for text in texts]
-        hint = filter_stop_words(hint)
+        texts = [prepare_string(replace_stop_words(text)) for text in texts]
+        hint = prepare_string(replace_stop_words(hint))
 
         api.prepare_query(texts, hint)
 
         api.send_request()
 
-        result = api.get_result()
+        result = prepare_string(api.get_result())
+
         if gen_method == "append_text":
             result = result.replace(hint, "")
             result = f"{hint} {result}"
@@ -312,7 +314,7 @@ def process_query(
         )
 
         logging.info(
-            f"/{gen_method}\tlen(texts)={len(texts)}; hint[:10]={hint[:10]}\tOK"
+            f"/{gen_method}\tlen(texts)={len(texts)}; hint[:20]={hint[:20]}\tOK"
         )
         return GenerateResult(
             status=0,
