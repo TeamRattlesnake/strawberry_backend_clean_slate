@@ -5,7 +5,7 @@
 import logging
 import time
 
-from fastapi import FastAPI, Header
+from fastapi import BackgroundTasks, FastAPI, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
@@ -13,7 +13,11 @@ from models import (
     FeedbackModel,
     GenerateQueryModel,
     SendFeedbackResult,
+    GenerateResultID,
+    GenerateResultStatus,
     GenerateResultData,
+    GenerateID,
+    GenerateStatus,
     GenerateResult,
     UserResults,
 )
@@ -245,66 +249,36 @@ def get_user_results(
         )
 
 
-def process_query(
-    method: str, data: GenerateQueryModel, Authorization=Header()
-) -> GenerateResultData:
+def process_query(gen_method: str, texts: list[str], hint: str, gen_id: int):
     """
     Общий метод для вызова функций работы с ChatGPT
     """
-    try:
-        auth_data = parse_query_string(Authorization)
-        if not is_valid(query=auth_data, secret=config.client_secret):
-            return GenerateResult(
-                status=1,
-                message="Authorization error",
-                data=GenerateResultData(text_data="", result_id=-1),
-            )
-    except UtilsException as exc:
-        logging.error(
-            f"Error in utils, probably the request was not correct: {exc}"
-        )
-        return GenerateResult(
-            status=3,
-            message="Authorization error",
-            data=GenerateResultData(text_data="", result_id=-1),
-        )
-    except Exception as exc:
-        logging.error(f"Unknown error: {exc}")
-        return GenerateResult(
-            status=4,
-            message="Unknown error",
-            data=GenerateResultData(text_data="", result_id=-1),
-        )
 
-    texts = data.context_data
-    hint = data.hint
-    user_id = auth_data["vk_user_id"]
-    group_id = data.group_id
-    gen_method = method
+    time_start = time.time()
 
     logging.info(
         f"/{gen_method}\tlen(texts)={len(texts)}; hint[:20]={hint[:20]}"
     )
 
+    api = NNApi(config.next_token())
+
+    if gen_method == "generate_text":
+        api.load_context(config.gen_context_path)
+    elif gen_method == "append_text":
+        api.load_context(config.append_context_path)
+    elif gen_method == "rephrase_text":
+        api.load_context(config.rephrase_context_path)
+    elif gen_method == "summarize_text":
+        api.load_context(config.summarize_context_path)
+    elif gen_method == "extend_text":
+        api.load_context(config.extend_context_path)
+    elif gen_method == "unmask_text":
+        api.load_context(config.unmask_context_path)
+
+    texts = [prepare_string(replace_stop_words(text)) for text in texts]
+    hint = prepare_string(replace_stop_words(hint))
+
     try:
-        api = NNApi(config.next_token())
-
-        if gen_method == "generate_text":
-            api.load_context(config.gen_context_path)
-        elif gen_method == "append_text":
-            api.load_context(config.append_context_path)
-        elif gen_method == "rephrase_text":
-            api.load_context(config.rephrase_context_path)
-        elif gen_method == "summarize_text":
-            api.load_context(config.summarize_context_path)
-        elif gen_method == "extend_text":
-            api.load_context(config.extend_context_path)
-        elif gen_method == "unmask_text":
-            api.load_context(config.unmask_context_path)
-
-        texts = [prepare_string(replace_stop_words(text)) for text in texts]
-        hint = prepare_string(replace_stop_words(hint))
-
         api.prepare_query(texts, hint)
 
         api.send_request()
@@ -315,43 +289,28 @@ def process_query(
             result = result.replace(hint, "")
             result = f"{hint} {result}"
 
-        result_id = db.add_generated_data(
-            hint, result, user_id, gen_method, group_id
-        )
+        time_elapsed = time.time() - time.time()
+
+        db.add_record_result(gen_id, result, time_elapsed)
 
         logging.info(
             f"/{gen_method}\tlen(texts)={len(texts)}; hint[:20]={hint[:20]}\tOK"
         )
-        return GenerateResult(
-            status=0,
-            message="OK",
-            data=GenerateResultData(text_data=result, result_id=result_id),
-        )
-    except NNException as exc:
-        logging.error(f"Error in NN API while generating text: {exc}")
-        return GenerateResult(
-            status=2,
-            message="Error in NN API while generating text",
-            data=GenerateResultData(text_data="", result_id=-1),
-        )
+
     except DBException as exc:
-        logging.error(f"Error in database while generating text: {exc}")
-        return GenerateResult(
-            status=6,
-            message="Error in database while generating text",
-            data=GenerateResultData(text_data="", result_id=-1),
-        )
+        logging.error(f"Error in database: {exc}")
+    except NNException as exc:
+        logging.error(f"Error in NN API: {exc}")
     except Exception as exc:
         logging.error(f"Unknown error: {exc}")
-        return GenerateResult(
-            status=4,
-            message="Unknown error",
-            data=GenerateResultData(text_data="", result_id=-1),
-        )
 
 
-@app.post("/generate_text", response_model=GenerateResult)
-def generate_text(data: GenerateQueryModel, Authorization=Header()):
+@app.post("/generate_text", response_model=GenerateID)
+def generate_text(
+    data: GenerateQueryModel,
+    background_tasks: BackgroundTasks,
+    Authorization=Header(),
+):
     """
     Метод для получения текста на тему, заданную в запросе.
     Текст генерируется с нуля
@@ -365,11 +324,56 @@ def generate_text(data: GenerateQueryModel, Authorization=Header()):
     group_id - int, айди группы, для которой генерируется пост. Нужно
     чтобы связать генерацию с группой и потом выдавать статистику для группы по этому айди
     """
-    return process_query("generate_text", data, Authorization)
+    try:
+        auth_data = parse_query_string(Authorization)
+        if not is_valid(query=auth_data, secret=config.client_secret):
+            return GenerateID(
+                status=1,
+                message="Authorization error",
+                data=GenerateResultID(text_id=-1),
+            )
+    except UtilsException as exc:
+        logging.error(
+            f"Error in utils, probably the request was not correct: {exc}"
+        )
+        return GenerateID(
+            status=3,
+            message="Authorization error",
+            data=GenerateResultID(text_id=-1),
+        )
+    except Exception as exc:
+        logging.error(f"Unknown error: {exc}")
+        return GenerateID(
+            status=4,
+            message="Unknown error",
+            data=GenerateResultID(text_id=-1),
+        )
+
+    texts = data.context_data
+    hint = data.hint
+    user_id = auth_data["vk_user_id"]
+    group_id = data.group_id
+    time_now = time.time()
+
+    gen_id = db.add_record(hint, user_id, "generate_text", group_id, time_now)
+
+    background_tasks.add_task(
+        process_query, "generate_text", texts, hint, gen_id
+    )
+
+    return GenerateID(
+        status=0,
+        message="OK",
+        data=GenerateResultID(text_id=gen_id),
+    )
 
 
-@app.post("/append_text", response_model=GenerateResult)
-def append_text(data: GenerateQueryModel, Authorization=Header()):
+@app.post("/append_text", response_model=GenerateID)
+def append_text(
+    data: GenerateQueryModel,
+    background_tasks: BackgroundTasks,
+    Authorization=Header(),
+):
     """
     Добавляет несколько слов или предложений к тексту запроса и
     возвращает только эти добавленные слова
@@ -384,11 +388,54 @@ def append_text(data: GenerateQueryModel, Authorization=Header()):
     Нужно чтобы связать генерацию с группой и потом выдавать статистику
     для группы по этому айди
     """
-    return process_query("append_text", data, Authorization)
+    try:
+        auth_data = parse_query_string(Authorization)
+        if not is_valid(query=auth_data, secret=config.client_secret):
+            return GenerateID(
+                status=1,
+                message="Authorization error",
+                data=GenerateResultID(text_id=-1),
+            )
+    except UtilsException as exc:
+        logging.error(
+            f"Error in utils, probably the request was not correct: {exc}"
+        )
+        return GenerateID(
+            status=3,
+            message="Authorization error",
+            data=GenerateResultID(text_id=-1),
+        )
+    except Exception as exc:
+        logging.error(f"Unknown error: {exc}")
+        return GenerateID(
+            status=4,
+            message="Unknown error",
+            data=GenerateResultID(text_id=-1),
+        )
+
+    texts = data.context_data
+    hint = data.hint
+    user_id = auth_data["vk_user_id"]
+    group_id = data.group_id
+    time_now = time.time()
+
+    gen_id = db.add_record(hint, user_id, "append_text", group_id, time_now)
+
+    background_tasks.add_task(process_query, "append_text", texts, hint, gen_id)
+
+    return GenerateID(
+        status=0,
+        message="OK",
+        data=GenerateResultID(text_id=gen_id),
+    )
 
 
-@app.post("/rephrase_text", response_model=GenerateResult)
-def rephrase_text(data: GenerateQueryModel, Authorization=Header()):
+@app.post("/rephrase_text", response_model=GenerateID)
+def rephrase_text(
+    data: GenerateQueryModel,
+    background_tasks: BackgroundTasks,
+    Authorization=Header(),
+):
     """
     Перефразирует поданный текст, возвращает текст примерно той же
     длины, но более складный по содержанию
@@ -403,11 +450,56 @@ def rephrase_text(data: GenerateQueryModel, Authorization=Header()):
     чтобы связать генерацию с группой и потом выдавать статистику для
     группы по этому айди
     """
-    return process_query("rephrase_text", data, Authorization)
+    try:
+        auth_data = parse_query_string(Authorization)
+        if not is_valid(query=auth_data, secret=config.client_secret):
+            return GenerateID(
+                status=1,
+                message="Authorization error",
+                data=GenerateResultID(text_id=-1),
+            )
+    except UtilsException as exc:
+        logging.error(
+            f"Error in utils, probably the request was not correct: {exc}"
+        )
+        return GenerateID(
+            status=3,
+            message="Authorization error",
+            data=GenerateResultID(text_id=-1),
+        )
+    except Exception as exc:
+        logging.error(f"Unknown error: {exc}")
+        return GenerateID(
+            status=4,
+            message="Unknown error",
+            data=GenerateResultID(text_id=-1),
+        )
+
+    texts = data.context_data
+    hint = data.hint
+    user_id = auth_data["vk_user_id"]
+    group_id = data.group_id
+    time_now = time.time()
+
+    gen_id = db.add_record(hint, user_id, "rephrase_text", group_id, time_now)
+
+    background_tasks.add_task(
+        process_query, "rephrase_text", texts, hint, gen_id
+    )
+
+    return GenerateID(
+        status=0,
+        message="OK",
+        data=GenerateResultID(text_id=gen_id),
+    )
 
 
-@app.post("/summarize_text", response_model=GenerateResult)
-def summarize_text(data: GenerateQueryModel, Authorization=Header()):
+@app.post("/summarize_text", response_model=GenerateID)
+def summarize_text(
+    data: GenerateQueryModel,
+    background_tasks: BackgroundTasks,
+    Authorization=Header(),
+):
     """
     Резюмирует поданный текст. Возвращает главную мысль текста в
     запросе в одно предложение
@@ -422,11 +514,56 @@ def summarize_text(data: GenerateQueryModel, Authorization=Header()):
     чтобы связать генерацию с группой и потом выдавать статистику для
     группы по этому айди
     """
-    return process_query("summarize_text", data, Authorization)
+    try:
+        auth_data = parse_query_string(Authorization)
+        if not is_valid(query=auth_data, secret=config.client_secret):
+            return GenerateID(
+                status=1,
+                message="Authorization error",
+                data=GenerateResultID(text_id=-1),
+            )
+    except UtilsException as exc:
+        logging.error(
+            f"Error in utils, probably the request was not correct: {exc}"
+        )
+        return GenerateID(
+            status=3,
+            message="Authorization error",
+            data=GenerateResultID(text_id=-1),
+        )
+    except Exception as exc:
+        logging.error(f"Unknown error: {exc}")
+        return GenerateID(
+            status=4,
+            message="Unknown error",
+            data=GenerateResultID(text_id=-1),
+        )
+
+    texts = data.context_data
+    hint = data.hint
+    user_id = auth_data["vk_user_id"]
+    group_id = data.group_id
+    time_now = time.time()
+
+    gen_id = db.add_record(hint, user_id, "summarize_text", group_id, time_now)
+
+    background_tasks.add_task(
+        process_query, "summarize_text", texts, hint, gen_id
+    )
+
+    return GenerateID(
+        status=0,
+        message="OK",
+        data=GenerateResultID(text_id=gen_id),
+    )
 
 
-@app.post("/extend_text", response_model=GenerateResult)
-def extend_text(data: GenerateQueryModel, Authorization=Header()):
+@app.post("/extend_text", response_model=GenerateID)
+def extend_text(
+    data: GenerateQueryModel,
+    background_tasks: BackgroundTasks,
+    Authorization=Header(),
+):
     """
     Расширяет поданный текст. Предполагается, что на вход идет уже
     большой осмысленный текст и он становится еще более красочным и большим
@@ -441,11 +578,54 @@ def extend_text(data: GenerateQueryModel, Authorization=Header()):
     связать генерацию с группой и потом выдавать статистику для группы по
     этому айди
     """
-    return process_query("extend_text", data, Authorization)
+    try:
+        auth_data = parse_query_string(Authorization)
+        if not is_valid(query=auth_data, secret=config.client_secret):
+            return GenerateID(
+                status=1,
+                message="Authorization error",
+                data=GenerateResultID(text_id=-1),
+            )
+    except UtilsException as exc:
+        logging.error(
+            f"Error in utils, probably the request was not correct: {exc}"
+        )
+        return GenerateID(
+            status=3,
+            message="Authorization error",
+            data=GenerateResultID(text_id=-1),
+        )
+    except Exception as exc:
+        logging.error(f"Unknown error: {exc}")
+        return GenerateID(
+            status=4,
+            message="Unknown error",
+            data=GenerateResultID(text_id=-1),
+        )
+
+    texts = data.context_data
+    hint = data.hint
+    user_id = auth_data["vk_user_id"]
+    group_id = data.group_id
+    time_now = time.time()
+
+    gen_id = db.add_record(hint, user_id, "extend_text", group_id, time_now)
+
+    background_tasks.add_task(process_query, "extend_text", texts, hint, gen_id)
+
+    return GenerateID(
+        status=0,
+        message="OK",
+        data=GenerateResultID(text_id=gen_id),
+    )
 
 
-@app.post("/unmask_text", response_model=GenerateResult)
-def unmask_text(data: GenerateQueryModel, Authorization=Header()):
+@app.post("/unmask_text", response_model=GenerateID)
+def unmask_text(
+    data: GenerateQueryModel,
+    background_tasks: BackgroundTasks,
+    Authorization=Header(),
+):
     """
     Заменяет '<MASK>' на наиболее подходящие слова или предложения.
     Возвращает текст, в котором все маски заменены на слова
@@ -460,4 +640,115 @@ def unmask_text(data: GenerateQueryModel, Authorization=Header()):
     чтобы связать генерацию с группой и потом выдавать статистику для
     группы по этому айди
     """
-    return process_query("unmask_text", data, Authorization)
+    try:
+        auth_data = parse_query_string(Authorization)
+        if not is_valid(query=auth_data, secret=config.client_secret):
+            return GenerateID(
+                status=1,
+                message="Authorization error",
+                data=GenerateResultID(text_id=-1),
+            )
+    except UtilsException as exc:
+        logging.error(
+            f"Error in utils, probably the request was not correct: {exc}"
+        )
+        return GenerateID(
+            status=3,
+            message="Authorization error",
+            data=GenerateResultID(text_id=-1),
+        )
+    except Exception as exc:
+        logging.error(f"Unknown error: {exc}")
+        return GenerateID(
+            status=4,
+            message="Unknown error",
+            data=GenerateResultID(text_id=-1),
+        )
+
+    texts = data.context_data
+    hint = data.hint
+    user_id = auth_data["vk_user_id"]
+    group_id = data.group_id
+    time_now = time.time()
+
+    gen_id = db.add_record(hint, user_id, "unmask_text", group_id, time_now)
+
+    background_tasks.add_task(process_query, "unmask_text", texts, hint, gen_id)
+
+    return GenerateID(
+        status=0,
+        message="OK",
+        data=GenerateResultID(text_id=gen_id),
+    )
+
+
+@app.get("/get_gen_status", response_model=GenerateStatus)
+def get_gen_status(text_id, Authorization=Header()):
+    try:
+        auth_data = parse_query_string(Authorization)
+        if not is_valid(query=auth_data, secret=config.client_secret):
+            return GenerateStatus(
+                status=1,
+                message="Authorization error",
+                data=GenerateResultStatus(text_status=-1),
+            )
+    except UtilsException as exc:
+        logging.error(
+            f"Error in utils, probably the request was not correct: {exc}"
+        )
+        return GenerateStatus(
+            status=3,
+            message="Authorization error",
+            data=GenerateResultStatus(text_status=-1),
+        )
+    except Exception as exc:
+        logging.error(f"Unknown error: {exc}")
+        return GenerateStatus(
+            status=4,
+            message="Unknown error",
+            data=GenerateResultStatus(text_status=-1),
+        )
+
+    status = db.get_status(text_id)
+
+    return GenerateStatus(
+        status=0,
+        message="OK",
+        data=GenerateResultStatus(text_status=status),
+    )
+
+
+@app.get("/get_gen_result", response_model=GenerateResult)
+def get_gen_result(text_id, Authorization=Header()):
+    try:
+        auth_data = parse_query_string(Authorization)
+        if not is_valid(query=auth_data, secret=config.client_secret):
+            return GenerateResult(
+                status=1,
+                message="Authorization error",
+                data=GenerateResultStatus(text_status=-1),
+            )
+    except UtilsException as exc:
+        logging.error(
+            f"Error in utils, probably the request was not correct: {exc}"
+        )
+        return GenerateResult(
+            status=3,
+            message="Authorization error",
+            data=GenerateResultData(text_data=""),
+        )
+    except Exception as exc:
+        logging.error(f"Unknown error: {exc}")
+        return GenerateResult(
+            status=4,
+            message="Unknown error",
+            data=GenerateResultData(text_data=""),
+        )
+
+    result = db.get_value(text_id)
+
+    return GenerateResult(
+        status=0,
+        message="OK",
+        data=GenerateResultData(text_data=result),
+    )
