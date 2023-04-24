@@ -2,14 +2,12 @@
 Модуль с классом для общения с базой данных
 """
 
-import datetime
 from sqlalchemy import (
     create_engine,
     Table,
     Column,
     String,
     Integer,
-    DateTime,
     MetaData,
     inspect,
     select,
@@ -51,12 +49,12 @@ class Database:
             Column("user_id", Integer, nullable=False),
             Column("method", String(1024), nullable=False),
             Column("query", String(3072), nullable=False),
-            Column("text", String(3072), nullable=False),
-            Column("rating", Integer, nullable=False, default=0),
+            Column("text", String(3072), nullable=False, default=""),
+            Column("rating", Integer, nullable=False, default=0.0),
             Column("unix_date", Integer, nullable=False),
             Column("group_id", Integer, nullable=False),
             Column("status", Integer, nullable=False),
-            Column("gen_time", Integer, nullable=False),
+            Column("gen_time", Integer, nullable=False, default=0.0),
         )
 
     def need_migration(self) -> bool:
@@ -103,9 +101,10 @@ class Database:
                 connection.execute(insert_query)
 
                 get_id_query = select(self.generated_data.c.id).where(
-                    self.generated_data.c.query == query,
-                    self.generated_data.c == unix_date,
+                    (self.generated_data.c.query == query)
+                    & (self.generated_data.c.unix_date == unix_date)
                 )
+
                 text_id = int(connection.execute(get_id_query).fetchall()[0][0])
 
                 return text_id
@@ -158,8 +157,8 @@ class Database:
 
                 if group_id:
                     select_query = select(self.generated_data).where(
-                        self.generated_data.c.user_id == user_id,
-                        self.generated_data.c.group_id == group_id,
+                        (self.generated_data.c.user_id == user_id)
+                        & (self.generated_data.c.group_id == group_id)
                     )
                 else:
                     select_query = select(self.generated_data).where(
@@ -202,7 +201,7 @@ class Database:
         try:
             with self.engine.connect() as connection:
                 get_status_query = select(self.generated_data.c.status).where(
-                    self.generated_data.c.text_id == text_id
+                    self.generated_data.c.id == text_id
                 )
                 status = int(
                     connection.execute(get_status_query).fetchall()[0][0]
@@ -219,7 +218,7 @@ class Database:
         try:
             with self.engine.connect() as connection:
                 get_text_query = select(self.generated_data.c.text).where(
-                    self.generated_data.c.text_id == text_id
+                    self.generated_data.c.id == text_id
                 )
                 text = str(connection.execute(get_text_query).fetchall()[0][0])
 

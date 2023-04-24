@@ -254,31 +254,31 @@ def process_query(gen_method: str, texts: list[str], hint: str, gen_id: int):
     Общий метод для вызова функций работы с ChatGPT
     """
 
-    time_start = time.time()
+    time_start = int(time.time())
 
     logging.info(
         f"/{gen_method}\tlen(texts)={len(texts)}; hint[:20]={hint[:20]}"
     )
 
-    api = NNApi(config.next_token())
-
-    if gen_method == "generate_text":
-        api.load_context(config.gen_context_path)
-    elif gen_method == "append_text":
-        api.load_context(config.append_context_path)
-    elif gen_method == "rephrase_text":
-        api.load_context(config.rephrase_context_path)
-    elif gen_method == "summarize_text":
-        api.load_context(config.summarize_context_path)
-    elif gen_method == "extend_text":
-        api.load_context(config.extend_context_path)
-    elif gen_method == "unmask_text":
-        api.load_context(config.unmask_context_path)
-
-    texts = [prepare_string(replace_stop_words(text)) for text in texts]
-    hint = prepare_string(replace_stop_words(hint))
-
     try:
+        api = NNApi(config.next_token())
+
+        if gen_method == "generate_text":
+            api.load_context(config.gen_context_path)
+        elif gen_method == "append_text":
+            api.load_context(config.append_context_path)
+        elif gen_method == "rephrase_text":
+            api.load_context(config.rephrase_context_path)
+        elif gen_method == "summarize_text":
+            api.load_context(config.summarize_context_path)
+        elif gen_method == "extend_text":
+            api.load_context(config.extend_context_path)
+        elif gen_method == "unmask_text":
+            api.load_context(config.unmask_context_path)
+
+        texts = [prepare_string(replace_stop_words(text)) for text in texts]
+        hint = prepare_string(replace_stop_words(hint))
+
         api.prepare_query(texts, hint)
 
         api.send_request()
@@ -289,7 +289,7 @@ def process_query(gen_method: str, texts: list[str], hint: str, gen_id: int):
             result = result.replace(hint, "")
             result = f"{hint} {result}"
 
-        time_elapsed = time.time() - time.time()
+        time_elapsed = int(time.time() - time_start)
 
         db.add_record_result(gen_id, result, time_elapsed)
 
@@ -353,9 +353,19 @@ def generate_text(
     hint = data.hint
     user_id = auth_data["vk_user_id"]
     group_id = data.group_id
-    time_now = time.time()
+    time_now = int(time.time())
 
-    gen_id = db.add_record(hint, user_id, "generate_text", group_id, time_now)
+    try:
+        gen_id = db.add_record(
+            hint, user_id, "generate_text", group_id, time_now
+        )
+    except DBException as exc:
+        logging.error(f"Error in database: {exc}")
+        return GenerateID(
+            status=6,
+            message="Error in database",
+            data=GenerateResultID(text_id=-1),
+        )
 
     background_tasks.add_task(
         process_query, "generate_text", texts, hint, gen_id
@@ -417,9 +427,17 @@ def append_text(
     hint = data.hint
     user_id = auth_data["vk_user_id"]
     group_id = data.group_id
-    time_now = time.time()
+    time_now = int(time.time())
 
-    gen_id = db.add_record(hint, user_id, "append_text", group_id, time_now)
+    try:
+        gen_id = db.add_record(hint, user_id, "append_text", group_id, time_now)
+    except DBException as exc:
+        logging.error(f"Error in database: {exc}")
+        return GenerateID(
+            status=6,
+            message="Error in database",
+            data=GenerateResultID(text_id=-1),
+        )
 
     background_tasks.add_task(process_query, "append_text", texts, hint, gen_id)
 
@@ -479,9 +497,19 @@ def rephrase_text(
     hint = data.hint
     user_id = auth_data["vk_user_id"]
     group_id = data.group_id
-    time_now = time.time()
+    time_now = int(time.time())
 
-    gen_id = db.add_record(hint, user_id, "rephrase_text", group_id, time_now)
+    try:
+        gen_id = db.add_record(
+            hint, user_id, "rephrase_text", group_id, time_now
+        )
+    except DBException as exc:
+        logging.error(f"Error in database: {exc}")
+        return GenerateID(
+            status=6,
+            message="Error in database",
+            data=GenerateResultID(text_id=-1),
+        )
 
     background_tasks.add_task(
         process_query, "rephrase_text", texts, hint, gen_id
@@ -543,9 +571,19 @@ def summarize_text(
     hint = data.hint
     user_id = auth_data["vk_user_id"]
     group_id = data.group_id
-    time_now = time.time()
+    time_now = int(time.time())
 
-    gen_id = db.add_record(hint, user_id, "summarize_text", group_id, time_now)
+    try:
+        gen_id = db.add_record(
+            hint, user_id, "summarize_text", group_id, time_now
+        )
+    except DBException as exc:
+        logging.error(f"Error in database: {exc}")
+        return GenerateID(
+            status=6,
+            message="Error in database",
+            data=GenerateResultID(text_id=-1),
+        )
 
     background_tasks.add_task(
         process_query, "summarize_text", texts, hint, gen_id
@@ -607,9 +645,17 @@ def extend_text(
     hint = data.hint
     user_id = auth_data["vk_user_id"]
     group_id = data.group_id
-    time_now = time.time()
+    time_now = int(time.time())
 
-    gen_id = db.add_record(hint, user_id, "extend_text", group_id, time_now)
+    try:
+        gen_id = db.add_record(hint, user_id, "extend_text", group_id, time_now)
+    except DBException as exc:
+        logging.error(f"Error in database: {exc}")
+        return GenerateID(
+            status=6,
+            message="Error in database",
+            data=GenerateResultID(text_id=-1),
+        )
 
     background_tasks.add_task(process_query, "extend_text", texts, hint, gen_id)
 
@@ -669,9 +715,17 @@ def unmask_text(
     hint = data.hint
     user_id = auth_data["vk_user_id"]
     group_id = data.group_id
-    time_now = time.time()
+    time_now = int(time.time())
 
-    gen_id = db.add_record(hint, user_id, "unmask_text", group_id, time_now)
+    try:
+        gen_id = db.add_record(hint, user_id, "unmask_text", group_id, time_now)
+    except DBException as exc:
+        logging.error(f"Error in database: {exc}")
+        return GenerateID(
+            status=6,
+            message="Error in database",
+            data=GenerateResultID(text_id=-1),
+        )
 
     background_tasks.add_task(process_query, "unmask_text", texts, hint, gen_id)
 
@@ -684,6 +738,11 @@ def unmask_text(
 
 @app.get("/get_gen_status", response_model=GenerateStatus)
 def get_gen_status(text_id, Authorization=Header()):
+    """
+    Возвращает статус генерации, 0 - не готово, 1 - готово
+
+    text_id - айди текста, выданный методом генерации
+    """
     try:
         auth_data = parse_query_string(Authorization)
         if not is_valid(query=auth_data, secret=config.client_secret):
@@ -709,7 +768,15 @@ def get_gen_status(text_id, Authorization=Header()):
             data=GenerateResultStatus(text_status=-1),
         )
 
-    status = db.get_status(text_id)
+    try:
+        status = db.get_status(text_id)
+    except DBException as exc:
+        logging.error(f"Error in database: {exc}")
+        return GenerateStatus(
+            status=6,
+            message="Error in database",
+            data=GenerateResultStatus(text_status=-1),
+        )
 
     return GenerateStatus(
         status=0,
@@ -720,6 +787,11 @@ def get_gen_status(text_id, Authorization=Header()):
 
 @app.get("/get_gen_result", response_model=GenerateResult)
 def get_gen_result(text_id, Authorization=Header()):
+    """
+    Возвращает результат генерации
+
+    text_id - айди текста, выданный методом генерации
+    """
     try:
         auth_data = parse_query_string(Authorization)
         if not is_valid(query=auth_data, secret=config.client_secret):
@@ -745,7 +817,15 @@ def get_gen_result(text_id, Authorization=Header()):
             data=GenerateResultData(text_data=""),
         )
 
-    result = db.get_value(text_id)
+    try:
+        result = db.get_value(text_id)
+    except DBException as exc:
+        logging.error(f"Error in database: {exc}")
+        return GenerateResult(
+            status=6,
+            message="Error in database",
+            data=GenerateResultData(text_data=""),
+        )
 
     return GenerateResult(
         status=0,

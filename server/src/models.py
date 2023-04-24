@@ -1,7 +1,6 @@
 """
 Модуль с моделями
 """
-from datetime import datetime
 from enum import Enum
 
 from pydantic import BaseModel
@@ -216,10 +215,10 @@ class GenerateResultInfo(BaseModel):
     hint: str
     text: str
     rating: int
-    date: int
+    date: float
     group_id: int
     status: str
-    gen_time: int
+    gen_time: float
 
 
 class UserResults(BaseModel):
