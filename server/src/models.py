@@ -207,6 +207,8 @@ class GenerateResultInfo(BaseModel):
     status : str, [READY, NOT_READY, ERROR] - описание статуса запроса
 
     gen_time : int - количество миллисекунд, затраченных на генерацию. date + gen_time = дата, когда генерация закончена
+
+    platform : str - платформа, с которой отправлен запрос
     """
 
     post_id: int
@@ -219,6 +221,7 @@ class GenerateResultInfo(BaseModel):
     group_id: int
     status: str
     gen_time: int
+    platform: str
 
 
 class UserResults(BaseModel):

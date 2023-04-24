@@ -126,8 +126,12 @@ def startup():
         raise Exception("Error! Shutting down...") from exc
 
 
-@app.post("/send_feedback", response_model=SendFeedbackResult)
-def send_feedback(data: FeedbackModel, Authorization=Header()):
+@app.post(
+    "/send_feedback", response_model=SendFeedbackResult
+)
+def send_feedback(
+    data: FeedbackModel, Authorization=Header()
+):
     """
     Метод для отправки фидбека по результату работы сервиса.
 
@@ -138,8 +142,12 @@ def send_feedback(data: FeedbackModel, Authorization=Header()):
 
     try:
         auth_data = parse_query_string(Authorization)
-        if not is_valid(query=auth_data, secret=config.client_secret):
-            return SendFeedbackResult(status=1, message="Authorization error")
+        if not is_valid(
+            query=auth_data, secret=config.client_secret
+        ):
+            return SendFeedbackResult(
+                status=1, message="Authorization error"
+            )
     except UtilsException as exc:
         logging.error(
             f"Error in utils, probably the request was not correct: {exc}"
@@ -151,25 +159,36 @@ def send_feedback(data: FeedbackModel, Authorization=Header()):
 
     result_id = data.result_id
     score = int(data.score)
-    logging.info(f"/send_feedback\tresult_id={result_id}; score={score}")
+    logging.info(
+        f"/send_feedback\tresult_id={result_id}; score={score}"
+    )
 
     try:
         db.change_rating(result_id, score)
         logging.info(
             f"/send_feedback\tresult_id={result_id}; score={score}\tOK"
         )
-        return SendFeedbackResult(status=0, message="Score updated")
+        return SendFeedbackResult(
+            status=0, message="Score updated"
+        )
     except DBException as exc:
         logging.error(f"Error in database: {exc}")
-        return SendFeedbackResult(status=6, message="Error in database")
+        return SendFeedbackResult(
+            status=6, message="Error in database"
+        )
     except Exception as exc:
         logging.error(f"Unknown error: {exc}")
-        return SendFeedbackResult(status=4, message="Unknown error")
+        return SendFeedbackResult(
+            status=4, message="Unknown error"
+        )
 
 
 @app.get("/get_user_results", response_model=UserResults)
 def get_user_results(
-    group_id=None, offset=None, limit=None, Authorization=Header()
+    group_id=None,
+    offset=None,
+    limit=None,
+    Authorization=Header(),
 ):
     """
     Метод для получения списка всех сгенерированных юзером текстов
@@ -185,7 +204,9 @@ def get_user_results(
 
     try:
         auth_data = parse_query_string(Authorization)
-        if not is_valid(query=auth_data, secret=config.client_secret):
+        if not is_valid(
+            query=auth_data, secret=config.client_secret
+        ):
             return UserResults(
                 status=1,
                 message="Authorization error",
@@ -218,7 +239,9 @@ def get_user_results(
     )
 
     try:
-        generated_results = db.get_users_texts(group_id, user_id, offset, limit)
+        generated_results = db.get_users_texts(
+            group_id, user_id, offset, limit
+        )
         logging.info(
             f"/get_user_results\tvk_user_id={user_id}; group_id={group_id}; offset={offset}; limit={limit}\tOK"
         )
@@ -249,7 +272,12 @@ def get_user_results(
         )
 
 
-def ask_chatgpt(gen_method: str, texts: list[str], hint: str, gen_id: int):
+def ask_chatgpt(
+    gen_method: str,
+    texts: list[str],
+    hint: str,
+    gen_id: int,
+):
     """
     Общий метод для вызова функций работы с ChatGPT
     """
@@ -276,7 +304,10 @@ def ask_chatgpt(gen_method: str, texts: list[str], hint: str, gen_id: int):
         elif gen_method == "unmask_text":
             api.load_context(config.unmask_context_path)
 
-        texts = [prepare_string(replace_stop_words(text)) for text in texts]
+        texts = [
+            prepare_string(replace_stop_words(text))
+            for text in texts
+        ]
         hint = prepare_string(replace_stop_words(hint))
 
         api.prepare_query(texts, hint)
@@ -313,7 +344,9 @@ def process_method(
 ):
     try:
         auth_data = parse_query_string(Authorization)
-        if not is_valid(query=auth_data, secret=config.client_secret):
+        if not is_valid(
+            query=auth_data, secret=config.client_secret
+        ):
             return GenerateID(
                 status=1,
                 message="Authorization error",
@@ -336,14 +369,29 @@ def process_method(
             data=GenerateResultID(text_id=-1),
         )
 
-    texts = data.context_data
-    hint = data.hint
-    user_id = auth_data["vk_user_id"]
-    group_id = data.group_id
-    time_now = int(time.time())
+    try:
+        texts = data.context_data
+        hint = data.hint
+        user_id = auth_data["vk_user_id"]
+        platform = auth_data["vk_platform"]
+        group_id = data.group_id
+        time_now = int(time.time())
+    except KeyError as exc:
+        return GenerateID(
+            status=4,
+            message="Key error. Check the header",
+            data=GenerateResultID(text_id=-1),
+        )
 
     try:
-        gen_id = db.add_record(hint, user_id, method, group_id, time_now)
+        gen_id = db.add_record(
+            hint,
+            user_id,
+            method,
+            group_id,
+            time_now,
+            platform,
+        )
     except DBException as exc:
         logging.error(f"Error in database: {exc}")
         return GenerateID(
@@ -352,7 +400,9 @@ def process_method(
             data=GenerateResultID(text_id=-1),
         )
 
-    background_tasks.add_task(ask_chatgpt, method, texts, hint, gen_id)
+    background_tasks.add_task(
+        ask_chatgpt, method, texts, hint, gen_id
+    )
 
     return GenerateID(
         status=0,
@@ -383,7 +433,10 @@ def generate_text(
     чтобы связать генерацию с группой и потом выдавать статистику для группы по этому айди
     """
     return process_method(
-        "generate_text", data, background_tasks, Authorization
+        "generate_text",
+        data,
+        background_tasks,
+        Authorization,
     )
 
 
@@ -408,7 +461,9 @@ def append_text(
     Нужно чтобы связать генерацию с группой и потом выдавать статистику
     для группы по этому айди
     """
-    return process_method("append_text", data, background_tasks, Authorization)
+    return process_method(
+        "append_text", data, background_tasks, Authorization
+    )
 
 
 @app.post("/rephrase_text", response_model=GenerateID)
@@ -432,7 +487,10 @@ def rephrase_text(
     группы по этому айди
     """
     return process_method(
-        "rephrase_text", data, background_tasks, Authorization
+        "rephrase_text",
+        data,
+        background_tasks,
+        Authorization,
     )
 
 
@@ -457,7 +515,10 @@ def summarize_text(
     группы по этому айди
     """
     return process_method(
-        "summarize_text", data, background_tasks, Authorization
+        "summarize_text",
+        data,
+        background_tasks,
+        Authorization,
     )
 
 
@@ -483,7 +544,9 @@ def extend_text(
     связать генерацию с группой и потом выдавать статистику для группы по
     этому айди
     """
-    return process_method("extend_text", data, background_tasks, Authorization)
+    return process_method(
+        "extend_text", data, background_tasks, Authorization
+    )
 
 
 @app.post("/unmask_text", response_model=GenerateID)
@@ -507,7 +570,9 @@ def unmask_text(
     чтобы связать генерацию с группой и потом выдавать статистику для
     группы по этому айди
     """
-    return process_method("unmask_text", data, background_tasks, Authorization)
+    return process_method(
+        "unmask_text", data, background_tasks, Authorization
+    )
 
 
 @app.get("/get_gen_status", response_model=GenerateStatus)
@@ -520,7 +585,9 @@ def get_gen_status(text_id, Authorization=Header()):
     logging.info(f"/get_gen_status\ttext_id={text_id}")
     try:
         auth_data = parse_query_string(Authorization)
-        if not is_valid(query=auth_data, secret=config.client_secret):
+        if not is_valid(
+            query=auth_data, secret=config.client_secret
+        ):
             return GenerateStatus(
                 status=1,
                 message="Authorization error",
@@ -545,7 +612,9 @@ def get_gen_status(text_id, Authorization=Header()):
 
     try:
         status = db.get_status(text_id)
-        logging.info(f"/get_gen_status\ttext_id={text_id}\tOK")
+        logging.info(
+            f"/get_gen_status\ttext_id={text_id}\tOK"
+        )
         return GenerateStatus(
             status=0,
             message="OK",
@@ -571,7 +640,9 @@ def get_gen_result(text_id, Authorization=Header()):
     logging.info(f"/get_gen_result\ttext_id={text_id}")
     try:
         auth_data = parse_query_string(Authorization)
-        if not is_valid(query=auth_data, secret=config.client_secret):
+        if not is_valid(
+            query=auth_data, secret=config.client_secret
+        ):
             return GenerateResult(
                 status=1,
                 message="Authorization error",
@@ -596,7 +667,9 @@ def get_gen_result(text_id, Authorization=Header()):
 
     try:
         result = db.get_value(text_id)
-        logging.info(f"/get_gen_result\ttext_id={text_id}\tOK")
+        logging.info(
+            f"/get_gen_result\ttext_id={text_id}\tOK"
+        )
         return GenerateResult(
             status=0,
             message="OK",
