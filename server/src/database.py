@@ -2,14 +2,12 @@
 Модуль с классом для общения с базой данных
 """
 
-import datetime
 from sqlalchemy import (
     create_engine,
     Table,
     Column,
     String,
     Integer,
-    DateTime,
     MetaData,
     inspect,
     select,
@@ -51,15 +49,12 @@ class Database:
             Column("user_id", Integer, nullable=False),
             Column("method", String(1024), nullable=False),
             Column("query", String(3072), nullable=False),
-            Column("text", String(3072), nullable=False),
-            Column("rating", Integer, nullable=False, default=0),
-            Column(
-                "date",
-                DateTime(timezone=True),
-                default=datetime.datetime.utcnow,
-                nullable=False,
-            ),
+            Column("text", String(3072), nullable=False, default=""),
+            Column("rating", Integer, nullable=False, default=0.0),
+            Column("unix_date", Integer, nullable=False),
             Column("group_id", Integer, nullable=False),
+            Column("status", Integer, nullable=False),
+            Column("gen_time", Integer, nullable=False, default=0.0),
         )
 
     def need_migration(self) -> bool:
@@ -82,36 +77,59 @@ class Database:
         except Exception as exc:
             raise DBException(f"Error in migrate: {exc}") from exc
 
-    def add_generated_data(
+    def add_record(
         self,
         query: str,
-        text: str,
         user_id: str,
         gen_method: str,
         group_id: int,
+        unix_date: int,
     ) -> int:
         """
-        Добавляет сгенерированный текст с нулевым рейтингом
+        Добавляет запись о генерации, пока без результата, возвращает айди только что добавленной записи
         """
         try:
             with self.engine.connect() as connection:
                 insert_query = insert(self.generated_data).values(
                     query=query,
-                    text=text,
                     user_id=user_id,
                     method=gen_method,
                     group_id=group_id,
+                    unix_date=unix_date,
+                    status=0,
                 )
                 connection.execute(insert_query)
 
                 get_id_query = select(self.generated_data.c.id).where(
-                    self.generated_data.c.text == text
+                    (self.generated_data.c.query == query)
+                    & (self.generated_data.c.unix_date == unix_date)
                 )
+
                 text_id = int(connection.execute(get_id_query).fetchall()[0][0])
 
                 return text_id
         except Exception as exc:
-            raise DBException(f"Error in add_generated_data: {exc}") from exc
+            raise DBException(f"Error in add_record: {exc}") from exc
+
+    def add_record_result(
+        self,
+        text_id: int,
+        text: str,
+        gen_time: int,
+    ):
+        """
+        Добавляет в запись результат генерации и потраченное время
+        """
+        try:
+            with self.engine.connect() as connection:
+                update_query = (
+                    update(self.generated_data)
+                    .where(self.generated_data.c.id == text_id)
+                    .values(text=text, gen_time=gen_time, status=1)
+                )
+                connection.execute(update_query)
+        except Exception as exc:
+            raise DBException(f"Error in add_record_result: {exc}") from exc
 
     def change_rating(self, text_id: int, new_score: int):
         """
@@ -139,8 +157,8 @@ class Database:
 
                 if group_id:
                     select_query = select(self.generated_data).where(
-                        self.generated_data.c.user_id == user_id,
-                        self.generated_data.c.group_id == group_id,
+                        (self.generated_data.c.user_id == user_id)
+                        & (self.generated_data.c.group_id == group_id)
                     )
                 else:
                     select_query = select(self.generated_data).where(
@@ -167,9 +185,43 @@ class Database:
                             rating=row[5],
                             date=row[6],
                             group_id=row[7],
+                            status=row[8],
+                            gen_time=row[9],
                         )
                     ]
                 return result
 
         except Exception as exc:
             raise DBException(f"Error in get_users_texts: {exc}") from exc
+
+    def get_status(self, text_id: int) -> str:
+        """
+        Получает статус генерации
+        """
+        try:
+            with self.engine.connect() as connection:
+                get_status_query = select(self.generated_data.c.status).where(
+                    self.generated_data.c.id == text_id
+                )
+                status = int(
+                    connection.execute(get_status_query).fetchall()[0][0]
+                )
+
+                return status
+        except Exception as exc:
+            raise DBException(f"Error in get_status: {exc}") from exc
+
+    def get_value(self, text_id) -> str:
+        """
+        Получает результат генерации
+        """
+        try:
+            with self.engine.connect() as connection:
+                get_text_query = select(self.generated_data.c.text).where(
+                    self.generated_data.c.id == text_id
+                )
+                text = str(connection.execute(get_text_query).fetchall()[0][0])
+
+                return text
+        except Exception as exc:
+            raise DBException(f"Error in get_value: {exc}") from exc

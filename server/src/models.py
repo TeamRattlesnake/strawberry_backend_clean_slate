@@ -1,7 +1,6 @@
 """
 Модуль с моделями
 """
-from datetime import datetime
 from enum import Enum
 
 from pydantic import BaseModel
@@ -73,17 +72,90 @@ class SendFeedbackResult(BaseModel):
     message: str
 
 
+class GenerateResultID(BaseModel):
+    """
+    Модель с результатами генерации. Возвращает статус операции и
+    текст с полезными данными, а такжеи айди результата (для обратной связи)
+
+    text_id - int, айди текста, по которому можно потом получить результат
+    """
+
+    text_id: int
+
+
+class GenerateResultStatus(BaseModel):
+    """
+    Модель с результатами генерации. Возвращает статус операции и
+    текст с полезными данными, а такжеи айди результата (для обратной связи)
+
+    text_status - int, статус генерации. 0 - не готово, 1 - готово
+    """
+
+    text_status: int
+
+
 class GenerateResultData(BaseModel):
     """
     Модель с результатами генерации. Возвращает статус операции и
     текст с полезными данными, а такжеи айди результата (для обратной связи)
 
     text_data - str, результат генерации
-
-    result_id - int, айди результата генерации для отправки фидбека по нему
     """
 
     text_data: str
+
+
+class GenerateID(BaseModel):
+    """
+    Модель с результатами генерации. Возвращает статус операции и текст с
+    полезными данными, а такжеи айди результата (для обратной связи)
+
+
+    status - int, статус операции:
+    * 0 - OK
+    * 1 - VK API Auth error
+    * 2 - NN API error
+    * 3 - request error
+    * 4 - unknown error
+    * 5 - not implemented
+    * 6 - db error
+
+    message - str, текстовое описание статуса. Тут хранится текст исключения,
+    если оно произошло
+
+    data - GenerateResultID, text_int, айди текста, по которому
+    можно потом получить результат
+    """
+
+    status: int
+    message: str
+    data: GenerateResultID
+
+
+class GenerateStatus(BaseModel):
+    """
+    Модель с результатами генерации. Возвращает статус операции и текст с
+    полезными данными, а такжеи айди результата (для обратной связи)
+
+
+    status - int, статус операции:
+    * 0 - OK
+    * 1 - VK API Auth error
+    * 2 - NN API error
+    * 3 - request error
+    * 4 - unknown error
+    * 5 - not implemented
+    * 6 - db error
+
+    message - str, текстовое описание статуса. Тут хранится текст исключения,
+    если оно произошло
+
+    data - GenerateResultStatus, text_status, статус генерации. 0 - не готово, 1 - готово, 2 - ошибка
+    """
+
+    status: int
+    message: str
+    data: GenerateResultStatus
 
 
 class GenerateResult(BaseModel):
@@ -104,8 +176,7 @@ class GenerateResult(BaseModel):
     message - str, текстовое описание статуса. Тут хранится текст исключения,
     если оно произошло
 
-    data - GenerateResultData, text_data - str, результат генерации,
-    result_id - int, айди результата генерации для отправки фидбека по нему
+    data - GenerateResultData, text_data - str, результат генерации
     """
 
     status: int
@@ -129,9 +200,13 @@ class GenerateResultInfo(BaseModel):
 
     rating : int, оценка поста, целое число (Задать посту оценку - см. /send_feedback)
 
-    date : datetime, дата и время, когда нейросеть создала результат, UTC +00
+    date : int, unix дата, когда был отправлен запрос
 
     group_id : int, айди группы, для которой сделан пост
+
+    status : str, [READY, NOT_READY, ERROR] - описание статуса запроса
+
+    gen_time : int - количество миллисекунд, затраченных на генерацию. date + gen_time = дата, когда генерация закончена
     """
 
     post_id: int
@@ -140,7 +215,7 @@ class GenerateResultInfo(BaseModel):
     hint: str
     text: str
     rating: int
-    date: datetime
+    date: float
     group_id: int
     status: str
     gen_time: float
