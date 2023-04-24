@@ -84,8 +84,8 @@ class GenerateResultData(BaseModel):
     """
 
     text_data: str
-    result_id: int
 
+class Get
 
 class GenerateResult(BaseModel):
     """
@@ -143,6 +143,8 @@ class GenerateResultInfo(BaseModel):
     rating: int
     date: datetime
     group_id: int
+    status: str
+    gen_time : float
 
 
 class UserResults(BaseModel):
@@ -162,8 +164,11 @@ class UserResults(BaseModel):
     исключения, если оно произошло
 
     data - GenerateResultInfo, список результатов генерации юзера
+
+    count - int, длина массива data
     """
 
     status: int
     message: str
     data: list[GenerateResultInfo]
+    count : int

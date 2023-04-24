@@ -186,6 +186,7 @@ def get_user_results(
                 status=1,
                 message="Authorization error",
                 data=[],
+                count=0,
             )
     except UtilsException as exc:
         logging.error(
@@ -195,6 +196,7 @@ def get_user_results(
             status=3,
             message="Authorization error",
             data=[],
+            count=0,
         )
     except Exception as exc:
         logging.error(f"Unknown error: {exc}")
@@ -202,6 +204,7 @@ def get_user_results(
             status=1,
             message="Unknown error",
             data=[],
+            count=0,
         )
 
     user_id = auth_data["vk_user_id"]
@@ -219,6 +222,7 @@ def get_user_results(
             status=0,
             message="Results returned",
             data=generated_results,
+            count=len(generated_results),
         )
 
     except DBException as exc:
@@ -229,6 +233,7 @@ def get_user_results(
             status=6,
             message="Error in database while fetching user results text",
             data=[],
+            count=0,
         )
     except Exception as exc:
         logging.error(f"Unknown error: {exc}")
@@ -236,6 +241,7 @@ def get_user_results(
             status=4,
             message="Unknown error",
             data=[],
+            count=0,
         )
 
 
@@ -455,3 +461,5 @@ def unmask_text(data: GenerateQueryModel, Authorization=Header()):
     группы по этому айди
     """
     return process_query("unmask_text", data, Authorization)
+
+
