@@ -94,7 +94,7 @@ def custom_openapi():
         return app.openapi_schema
     openapi_schema = get_openapi(
         title="Strawberry🍓",
-        version="1.0.0 - Clean Slate",
+        version="1.0.5 - Clean Slate",
         description=DESCRIPTION,
         routes=app.routes,
         contact={
@@ -281,8 +281,6 @@ def process_query(gen_method: str, texts: list[str], hint: str, gen_id: int):
 
         api.prepare_query(texts, hint)
 
-        logging.info(f"|{api.query}|")
-
         api.send_request()
 
         result = prepare_string(api.get_result())
@@ -316,6 +314,8 @@ def generate_text(
     """
     Метод для получения текста на тему, заданную в запросе.
     Текст генерируется с нуля
+    Возвращает айди, по которому можно проверить статус и получить
+    результат
 
     context_data - list[str], список текстов существующих постов
     в паблике (лучше не менее 3-5 непустых текстов )
@@ -388,7 +388,8 @@ def append_text(
 ):
     """
     Добавляет несколько слов или предложений к тексту запроса и
-    возвращает только эти добавленные слова
+    возвращает айди, по которому можно проверить статус и получить
+    результат
 
     context_data - list[str], список текстов существующих постов
     в паблике (лучше не менее 3-5 непустых текстов )
@@ -457,8 +458,8 @@ def rephrase_text(
     Authorization=Header(),
 ):
     """
-    Перефразирует поданный текст, возвращает текст примерно той же
-    длины, но более складный по содержанию
+    Перефразирует поданный текст, Возвращает айди, по которому
+    можно проверить статус и получить результат
 
     context_data - list[str], список текстов существующих постов в
     паблике (лучше не менее 3-5 непустых текстов )
@@ -531,8 +532,8 @@ def summarize_text(
     Authorization=Header(),
 ):
     """
-    Резюмирует поданный текст. Возвращает главную мысль текста в
-    запросе в одно предложение
+    Резюмирует поданный текст. Возвращает айди, по которому
+    можно проверить статус и получить результат
 
     context_data - list[str], список текстов существующих постов в
     паблике (лучше не менее 3-5 непустых текстов )
@@ -607,6 +608,8 @@ def extend_text(
     """
     Расширяет поданный текст. Предполагается, что на вход идет уже
     большой осмысленный текст и он становится еще более красочным и большим
+    Возвращает айди, по которому можно проверить статус и получить
+    результат
 
     context_data - list[str], список текстов существующих постов
     в паблике (лучше не менее 3-5 непустых текстов )
@@ -676,7 +679,8 @@ def unmask_text(
 ):
     """
     Заменяет '<MASK>' на наиболее подходящие слова или предложения.
-    Возвращает текст, в котором все маски заменены на слова
+    Возвращает айди, по которому можно проверить статус и получить
+    результат
 
     context_data - list[str], список текстов существующих постов в
     паблике (лучше не менее 3-5 непустых текстов )
@@ -745,6 +749,7 @@ def get_gen_status(text_id, Authorization=Header()):
 
     text_id - айди текста, выданный методом генерации
     """
+    logging.info(f"/get_gen_status\ttext_id={text_id}")
     try:
         auth_data = parse_query_string(Authorization)
         if not is_valid(query=auth_data, secret=config.client_secret):
@@ -772,6 +777,13 @@ def get_gen_status(text_id, Authorization=Header()):
 
     try:
         status = db.get_status(text_id)
+        logging.info(f"/get_gen_status\ttext_id={text_id}\tOK")
+        return GenerateStatus(
+            status=0,
+            message="OK",
+            data=GenerateResultStatus(text_status=status),
+        )
+
     except DBException as exc:
         logging.error(f"Error in database: {exc}")
         return GenerateStatus(
@@ -780,20 +792,15 @@ def get_gen_status(text_id, Authorization=Header()):
             data=GenerateResultStatus(text_status=-1),
         )
 
-    return GenerateStatus(
-        status=0,
-        message="OK",
-        data=GenerateResultStatus(text_status=status),
-    )
-
 
 @app.get("/get_gen_result", response_model=GenerateResult)
 def get_gen_result(text_id, Authorization=Header()):
     """
-    Возвращает результат генерации
+    Возвращает результат генерации по айди
 
     text_id - айди текста, выданный методом генерации
     """
+    logging.info(f"/get_gen_result\ttext_id={text_id}")
     try:
         auth_data = parse_query_string(Authorization)
         if not is_valid(query=auth_data, secret=config.client_secret):
@@ -821,6 +828,12 @@ def get_gen_result(text_id, Authorization=Header()):
 
     try:
         result = db.get_value(text_id)
+        logging.info(f"/get_gen_result\ttext_id={text_id}\tOK")
+        return GenerateResult(
+            status=0,
+            message="OK",
+            data=GenerateResultData(text_data=result),
+        )
     except DBException as exc:
         logging.error(f"Error in database: {exc}")
         return GenerateResult(
@@ -828,9 +841,3 @@ def get_gen_result(text_id, Authorization=Header()):
             message="Error in database",
             data=GenerateResultData(text_data=""),
         )
-
-    return GenerateResult(
-        status=0,
-        message="OK",
-        data=GenerateResultData(text_data=result),
-    )
