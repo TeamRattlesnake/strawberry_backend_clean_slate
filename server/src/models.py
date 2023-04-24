@@ -85,7 +85,6 @@ class GenerateResultData(BaseModel):
 
     text_data: str
 
-class Get
 
 class GenerateResult(BaseModel):
     """
@@ -144,7 +143,7 @@ class GenerateResultInfo(BaseModel):
     date: datetime
     group_id: int
     status: str
-    gen_time : float
+    gen_time: float
 
 
 class UserResults(BaseModel):
@@ -171,4 +170,4 @@ class UserResults(BaseModel):
     status: int
     message: str
     data: list[GenerateResultInfo]
-    count : int
+    count: int

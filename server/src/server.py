@@ -461,5 +461,3 @@ def unmask_text(data: GenerateQueryModel, Authorization=Header()):
     группы по этому айди
     """
     return process_query("unmask_text", data, Authorization)
-
-
