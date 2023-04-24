@@ -215,10 +215,10 @@ class GenerateResultInfo(BaseModel):
     hint: str
     text: str
     rating: int
-    date: float
+    date: int
     group_id: int
     status: str
-    gen_time: float
+    gen_time: int
 
 
 class UserResults(BaseModel):

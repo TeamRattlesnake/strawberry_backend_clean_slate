@@ -69,8 +69,6 @@ app.add_middleware(
 
 
 DESCRIPTION = """
-![Poster](https://sun9-71.userapi.com/impg/ssP_zAkgpVxj600WhPviOU-gfpQoIi22iU7fTA/eMqb-KVs50A.jpg?size=1024x1024&quality=95&sign=f5a188fec5bf5da5c5bf981f81f9f2a5&type=album)
-
 Выпускной проект ОЦ VK в МГТУ команды Team Rattlesnake. Сервис, генерирующий
 контент для социальной сети ВКонтакте. Посты генерируются сами с помощью
 нейросетей, также можно сократить, удлинить, продолжить, перефразировать
