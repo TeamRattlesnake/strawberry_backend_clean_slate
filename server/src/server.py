@@ -281,6 +281,8 @@ def process_query(gen_method: str, texts: list[str], hint: str, gen_id: int):
 
         api.prepare_query(texts, hint)
 
+        logging.info(f"|{api.query}|")
+
         api.send_request()
 
         result = prepare_string(api.get_result())
