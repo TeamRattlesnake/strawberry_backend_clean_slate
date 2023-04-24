@@ -5,7 +5,9 @@
 from revChatGPT.V1 import Chatbot
 
 MAX_WORDS_LEN = 2800
-NO_SOURCE_TEXTS_REPLACEMENT = "Старых постов в сообществе нет, так что придумай что-то креативное"
+NO_SOURCE_TEXTS_REPLACEMENT = (
+    "Старых постов в сообществе нет, так что придумай что-то креативное"
+)
 OLD_TEXTS_PLACEHOLDER = "[OLD_TEXTS]"
 HINT_PLACEHOLDER = "[HINT]"
 
@@ -40,18 +42,12 @@ class NNApi:
         Загружает шаблон контекста из файлика
         """
         try:
-            with open(
-                path, "r", encoding="UTF-8"
-            ) as ctx_file:
+            with open(path, "r", encoding="UTF-8") as ctx_file:
                 self.context = ctx_file.read()
         except Exception as exc:
-            raise NNException(
-                f"Error in load_context: {exc}"
-            ) from exc
+            raise NNException(f"Error in load_context: {exc}") from exc
 
-    def prepare_query(
-        self, context_data: list[str], hint: str
-    ):
+    def prepare_query(self, context_data: list[str], hint: str):
         """
         Расставляет данные по шаблону контекста
         """
@@ -99,14 +95,10 @@ class NNApi:
                     NO_SOURCE_TEXTS_REPLACEMENT,
                 )
 
-            self.query = self.query.replace(
-                HINT_PLACEHOLDER, hint
-            )
+            self.query = self.query.replace(HINT_PLACEHOLDER, hint)
             self.query = self.query.strip()
         except Exception as exc:
-            raise NNException(
-                f"Error in prepare_query: {exc}"
-            ) from exc
+            raise NNException(f"Error in prepare_query: {exc}") from exc
 
     def send_request(self):
         """
@@ -116,9 +108,7 @@ class NNApi:
             for data in self.chatbot.ask(self.query):
                 self.result = data["message"]
         except Exception as exc:
-            raise NNException(
-                f"Error in send_request: {exc}"
-            ) from exc
+            raise NNException(f"Error in send_request: {exc}") from exc
 
     def get_result(self) -> str:
         """
