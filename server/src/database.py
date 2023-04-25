@@ -130,11 +130,13 @@ class Database:
         text_id: int,
         text: str,
         gen_time: int,
+        is_ok: bool = True,
     ):
         """
         Добавляет в запись результат генерации и потраченное время
         """
         try:
+            status = 1 if is_ok else 2
             with self.engine.connect() as connection:
                 update_query = (
                     update(self.generated_data)
@@ -142,7 +144,7 @@ class Database:
                     .values(
                         text=text,
                         gen_time=gen_time,
-                        status=1,
+                        status=status,
                     )
                 )
                 connection.execute(update_query)
@@ -168,8 +170,6 @@ class Database:
         self,
         group_id: int,
         user_id: int,
-        offset: int,
-        limit: int,
     ) -> list[GenerateResultInfo]:
         """
         Выбирает всю информацию о текстах, сгенерированных юзером
@@ -181,10 +181,12 @@ class Database:
                     select_query = select(self.generated_data).where(
                         (self.generated_data.c.user_id == user_id)
                         & (self.generated_data.c.group_id == group_id)
+                        & (self.generated_data.c.status == 1)
                     )
                 else:
                     select_query = select(self.generated_data).where(
-                        self.generated_data.c.user_id == user_id
+                        (self.generated_data.c.user_id == user_id)
+                        & (self.generated_data.c.status == 1)
                     )
 
                 response = connection.execute(select_query).fetchall()

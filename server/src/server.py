@@ -221,7 +221,7 @@ def get_user_results(
     )
 
     try:
-        generated_results = db.get_users_texts(group_id, user_id, offset, limit)
+        generated_results = db.get_users_texts(group_id, user_id)
         total_len = len(generated_results)
         if offset:
             generated_results = generated_results[offset:]
@@ -310,10 +310,11 @@ def ask_chatgpt(
             f"/{gen_method}\tlen(texts)={len(texts)}; hint[:20]={hint[:20]}; gen_id={gen_id}\tOK"
         )
 
+    except NNException as exc:
+        logging.error(f"Error in NN API: {exc}\n")
+        db.add_record_result(gen_id, "", 0, False)
     except DBException as exc:
         logging.error(f"Error in database: {exc}")
-    except NNException as exc:
-        logging.error(f"Error in NN API: {exc}")
     except Exception as exc:
         logging.error(f"Unknown error: {exc}")
 
