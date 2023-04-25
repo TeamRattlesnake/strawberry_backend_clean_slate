@@ -169,9 +169,9 @@ def send_feedback(data: FeedbackModel, Authorization=Header()):
 
 @app.get("/get_user_results", response_model=UserResults)
 def get_user_results(
-    group_id=None,
-    offset=None,
-    limit=None,
+    group_id: int = None,
+    offset: int = None,
+    limit: int = None,
     Authorization=Header(),
 ):
     """
