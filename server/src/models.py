@@ -8,11 +8,20 @@ from pydantic import BaseModel
 
 class Score(int, Enum):
     """
-    Модель, модержащая лайк или дизайк
+    Модель, содержащая лайк или дизайк
     """
 
     LIKE = 1
     DISLIKE = -1
+
+
+class Published(int, Enum):
+    """
+    Модель, содержащая информацию о публикации
+    Если это не None, тогда опубликовано
+    """
+
+    YES = 1
 
 
 class FeedbackModel(BaseModel):
@@ -23,10 +32,13 @@ class FeedbackModel(BaseModel):
     result_id - int, номер результата работы сервиса.
 
     score - Score, оценка результата, -1 или 1
+
+    published - Published, 1 если опубликовано, иначе None
     """
 
     result_id: int
-    score: Score
+    score: Score = None
+    published: Published = None
 
 
 class GenerateQueryModel(BaseModel):
@@ -209,6 +221,8 @@ class GenerateResultInfo(BaseModel):
     gen_time : int - количество миллисекунд, затраченных на генерацию. date + gen_time = дата, когда генерация закончена
 
     platform : str - платформа, с которой отправлен запрос
+
+    published : int - 0 - не опубликовано, 1 - опубликовано
     """
 
     post_id: int
@@ -222,6 +236,7 @@ class GenerateResultInfo(BaseModel):
     status: str
     gen_time: int
     platform: str
+    published: int
 
 
 class UserResults(BaseModel):

@@ -66,6 +66,7 @@ class Database:
                 default=0,
             ),
             Column("platform", String(128), nullable=False),
+            Column("published", Integer, nullable=False),
         )
 
     def need_migration(self) -> bool:
@@ -111,6 +112,7 @@ class Database:
                     status=0,
                     rating=0,
                     platform=platform,
+                    published=0,
                 )
                 connection.execute(insert_query)
 
@@ -151,17 +153,26 @@ class Database:
         except Exception as exc:
             raise DBException(f"Error in add_record_result: {exc}") from exc
 
-    def change_rating(self, text_id: int, new_score: int):
+    def write_feedback(self, text_id: int, new_score: int, published: int):
         """
         Ставит генерации оценку
         """
         try:
             with self.engine.connect() as connection:
-                update_query = (
-                    update(self.generated_data)
-                    .where(self.generated_data.c.id == text_id)
-                    .values(rating=new_score)
-                )
+
+                if published:
+                    update_query = (
+                        update(self.generated_data)
+                        .where(self.generated_data.c.id == text_id)
+                        .values(rating=new_score, published=1)
+                    )
+                else:
+                    update_query = (
+                        update(self.generated_data)
+                        .where(self.generated_data.c.id == text_id)
+                        .values(rating=new_score)
+                    )
+
                 connection.execute(update_query)
         except Exception as exc:
             raise DBException(f"Error in change_rating: {exc}") from exc
@@ -206,6 +217,7 @@ class Database:
                             status=row[8],
                             gen_time=row[9],
                             platform=row[10],
+                            published=row[11],
                         )
                     ]
                 return result

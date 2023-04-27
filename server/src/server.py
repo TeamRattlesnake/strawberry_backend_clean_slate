@@ -134,6 +134,8 @@ def send_feedback(data: FeedbackModel, Authorization=Header()):
     result_id - int, номер результата работы сервиса.
 
     score - int, оценка, -1 или 1.
+
+    published - int, 1 если опубликовано, иначе None
     """
 
     try:
@@ -151,12 +153,15 @@ def send_feedback(data: FeedbackModel, Authorization=Header()):
 
     result_id = data.result_id
     score = int(data.score)
-    logging.info(f"/send_feedback\tresult_id={result_id}; score={score}")
+    published = int(data.published)
+    logging.info(
+        f"/send_feedback\tresult_id={result_id}; score={score}; published={published}"
+    )
 
     try:
-        db.change_rating(result_id, score)
+        db.write_feedback(result_id, published, score)
         logging.info(
-            f"/send_feedback\tresult_id={result_id}; score={score}\tOK"
+            f"/send_feedback\tresult_id={result_id}; score={score}, published={published}\tOK"
         )
         return SendFeedbackResult(status=0, message="Score updated")
     except DBException as exc:
