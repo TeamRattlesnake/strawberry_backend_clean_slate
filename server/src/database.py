@@ -153,25 +153,33 @@ class Database:
         except Exception as exc:
             raise DBException(f"Error in add_record_result: {exc}") from exc
 
-    def write_feedback(self, text_id: int, new_score: int, published: int):
+    def write_feedback(self, text_id: int, new_score: int):
         """
         Ставит генерации оценку
         """
         try:
             with self.engine.connect() as connection:
+                update_query = (
+                    update(self.generated_data)
+                    .where(self.generated_data.c.id == text_id)
+                    .values(rating=new_score)
+                )
 
-                if published:
-                    update_query = (
-                        update(self.generated_data)
-                        .where(self.generated_data.c.id == text_id)
-                        .values(rating=new_score, published=1)
-                    )
-                else:
-                    update_query = (
-                        update(self.generated_data)
-                        .where(self.generated_data.c.id == text_id)
-                        .values(rating=new_score)
-                    )
+                connection.execute(update_query)
+        except Exception as exc:
+            raise DBException(f"Error in change_rating: {exc}") from exc
+
+    def write_published(self, text_id: int):
+        """
+        Ставит генерации оценку
+        """
+        try:
+            with self.engine.connect() as connection:
+                update_query = (
+                    update(self.generated_data)
+                    .where(self.generated_data.c.id == text_id)
+                    .values(published=1)
+                )
 
                 connection.execute(update_query)
         except Exception as exc:

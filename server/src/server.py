@@ -11,6 +11,7 @@ from fastapi.openapi.utils import get_openapi
 
 from models import (
     FeedbackModel,
+    PublishedModel,
     GenerateQueryModel,
     SendFeedbackResult,
     GenerateResultID,
@@ -135,7 +136,6 @@ def send_feedback(data: FeedbackModel, Authorization=Header()):
 
     score - int, оценка, -1 или 1.
 
-    published - int, 1 если опубликовано, иначе None
     """
 
     try:
@@ -153,16 +153,51 @@ def send_feedback(data: FeedbackModel, Authorization=Header()):
 
     result_id = data.result_id
     score = int(data.score)
-    published = int(data.published)
-    logging.info(
-        f"/send_feedback\tresult_id={result_id}; score={score}; published={published}"
-    )
+    logging.info(f"/send_feedback\tresult_id={result_id}; score={score}")
 
     try:
-        db.write_feedback(result_id, published, score)
+        db.write_feedback(result_id, score)
         logging.info(
-            f"/send_feedback\tresult_id={result_id}; score={score}, published={published}\tOK"
+            f"/send_feedback\tresult_id={result_id}; score={score}\tOK"
         )
+        return SendFeedbackResult(status=0, message="Score updated")
+    except DBException as exc:
+        logging.error(f"Error in database: {exc}")
+        return SendFeedbackResult(status=6, message="Error in database")
+    except Exception as exc:
+        logging.error(f"Unknown error: {exc}")
+        return SendFeedbackResult(status=4, message="Unknown error")
+
+
+@app.post("/send_published", response_model=SendFeedbackResult)
+def send_published(data: PublishedModel, Authorization=Header()):
+    """
+    Метод для отправки факта публикации. Запись с указанным
+    result_id будет считаться опубликованной
+
+    result_id - int, номер результата работы сервиса.
+
+    """
+
+    try:
+        auth_data = parse_query_string(Authorization)
+        if not is_valid(query=auth_data, secret=config.client_secret):
+            return SendFeedbackResult(status=1, message="Authorization error")
+    except UtilsException as exc:
+        logging.error(
+            f"Error in utils, probably the request was not correct: {exc}"
+        )
+        return SendFeedbackResult(
+            status=3,
+            message="Error in utils, probably the request was not correct",
+        )
+
+    result_id = data.result_id
+    logging.info(f"/send_published\tresult_id={result_id}")
+
+    try:
+        db.write_published(result_id)
+        logging.info(f"/send_published\tresult_id={result_id}\tOK")
         return SendFeedbackResult(status=0, message="Score updated")
     except DBException as exc:
         logging.error(f"Error in database: {exc}")

@@ -15,15 +15,6 @@ class Score(int, Enum):
     DISLIKE = -1
 
 
-class Published(int, Enum):
-    """
-    Модель, содержащая информацию о публикации
-    Если это не None, тогда опубликовано
-    """
-
-    YES = 1
-
-
 class FeedbackModel(BaseModel):
     """
     Модель содержащая обратную связь по
@@ -32,13 +23,20 @@ class FeedbackModel(BaseModel):
     result_id - int, номер результата работы сервиса.
 
     score - Score, оценка результата, -1 или 1
-
-    published - Published, 1 если опубликовано, иначе None
     """
 
     result_id: int
-    score: Score = None
-    published: Published = None
+    score: Score
+
+
+class PublishedModel(BaseModel):
+    """
+    Модель для отправки факта о публикации
+
+    result_id - int, номер результата работы сервиса.
+    """
+
+    result_id: int
 
 
 class GenerateQueryModel(BaseModel):
