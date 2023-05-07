@@ -11,7 +11,6 @@ from fastapi.openapi.utils import get_openapi
 
 from models import (
     FeedbackModel,
-    PublishedModel,
     GenerateQueryModel,
     SendFeedbackResult,
     GenerateResultID,
