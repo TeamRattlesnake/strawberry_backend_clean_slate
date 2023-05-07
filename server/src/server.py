@@ -95,7 +95,7 @@ def custom_openapi():
         return app.openapi_schema
     openapi_schema = get_openapi(
         title="Strawberry🍓",
-        version="1.1.0 - Clean Slate",
+        version="1.2.0 - Clean Slate",
         description=DESCRIPTION,
         routes=app.routes,
         contact={
@@ -127,14 +127,18 @@ def startup():
         raise Exception("Error! Shutting down...") from exc
 
 
-@app.post("/send_feedback", response_model=SendFeedbackResult)
+@app.post(
+    "/api/v1/stats/feedback",
+    response_model=SendFeedbackResult,
+    tags=["Статистика"],
+)
 def send_feedback(data: FeedbackModel, Authorization=Header()):
     """
     Метод для отправки фидбека по результату работы сервиса.
 
     result_id - int, номер результата работы сервиса.
 
-    score - int, оценка, -1 или 1.
+    feedback - Feedback, оценка результата, -1, 1, 5
 
     """
 
@@ -153,10 +157,16 @@ def send_feedback(data: FeedbackModel, Authorization=Header()):
 
     result_id = data.result_id
     score = int(data.score)
+
     logging.info(f"/send_feedback\tresult_id={result_id}; score={score}")
 
     try:
-        db.write_feedback(result_id, score)
+        if score in [-1, 1]:
+            db.write_feedback(result_id, score)
+        if score == 5:
+            db.write_published(result_id)
+        if score == -1:
+            db.hide_generation(result_id)
         logging.info(
             f"/send_feedback\tresult_id={result_id}; score={score}\tOK"
         )
@@ -169,46 +179,10 @@ def send_feedback(data: FeedbackModel, Authorization=Header()):
         return SendFeedbackResult(status=4, message="Unknown error")
 
 
-@app.post("/send_published", response_model=SendFeedbackResult)
-def send_published(data: PublishedModel, Authorization=Header()):
-    """
-    Метод для отправки факта публикации. Запись с указанным
-    result_id будет считаться опубликованной
-
-    result_id - int, номер результата работы сервиса.
-
-    """
-
-    try:
-        auth_data = parse_query_string(Authorization)
-        if not is_valid(query=auth_data, secret=config.client_secret):
-            return SendFeedbackResult(status=1, message="Authorization error")
-    except UtilsException as exc:
-        logging.error(
-            f"Error in utils, probably the request was not correct: {exc}"
-        )
-        return SendFeedbackResult(
-            status=3,
-            message="Error in utils, probably the request was not correct",
-        )
-
-    result_id = data.result_id
-    logging.info(f"/send_published\tresult_id={result_id}")
-
-    try:
-        db.write_published(result_id)
-        logging.info(f"/send_published\tresult_id={result_id}\tOK")
-        return SendFeedbackResult(status=0, message="Score updated")
-    except DBException as exc:
-        logging.error(f"Error in database: {exc}")
-        return SendFeedbackResult(status=6, message="Error in database")
-    except Exception as exc:
-        logging.error(f"Unknown error: {exc}")
-        return SendFeedbackResult(status=4, message="Unknown error")
-
-
-@app.get("/get_user_results", response_model=UserResults)
-def get_user_results(
+@app.get(
+    "/api/v1/stats/history", response_model=UserResults, tags=["Статистика"]
+)
+def get_history(
     group_id: int = None,
     offset: int = None,
     limit: int = None,
@@ -430,17 +404,20 @@ def process_method(
     )
 
 
-@app.post("/generate_text", response_model=GenerateID)
-def generate_text(
+@app.post(
+    "/api/v1/generation/generate", response_model=GenerateID, tags=["Генерация"]
+)
+def generate(
     data: GenerateQueryModel,
     background_tasks: BackgroundTasks,
     Authorization=Header(),
 ):
     """
-    Метод для получения текста на тему, заданную в запросе.
-    Текст генерируется с нуля
-    Возвращает айди, по которому можно проверить статус и получить
-    результат
+    Метод для генерации текстового контета нейросетью выбранным способом
+
+    method - GenerationMethod, строка с описанием метода генерации.
+    Доступныезначения: "generate_text", "append_text", "rephrase_text",
+    "summarize_text", "extend_text", "unmask_text"
 
     context_data - list[str], список текстов существующих постов
     в паблике (лучше не менее 3-5 непустых текстов )
@@ -452,144 +429,19 @@ def generate_text(
     чтобы связать генерацию с группой и потом выдавать статистику для группы по этому айди
     """
     return process_method(
-        "generate_text",
+        data.method,
         data,
         background_tasks,
         Authorization,
     )
 
 
-@app.post("/append_text", response_model=GenerateID)
-def append_text(
-    data: GenerateQueryModel,
-    background_tasks: BackgroundTasks,
-    Authorization=Header(),
-):
-    """
-    Добавляет несколько слов или предложений к тексту запроса и
-    возвращает айди, по которому можно проверить статус и получить
-    результат
-
-    context_data - list[str], список текстов существующих постов
-    в паблике (лучше не менее 3-5 непустых текстов )
-
-    hint - str, запрос на генерацию контента. Содержит текст, к
-    концу которого нужно добавить еще текст
-
-    group_id - int, айди группы, для которой генерируется пост.
-    Нужно чтобы связать генерацию с группой и потом выдавать статистику
-    для группы по этому айди
-    """
-    return process_method("append_text", data, background_tasks, Authorization)
-
-
-@app.post("/rephrase_text", response_model=GenerateID)
-def rephrase_text(
-    data: GenerateQueryModel,
-    background_tasks: BackgroundTasks,
-    Authorization=Header(),
-):
-    """
-    Перефразирует поданный текст, Возвращает айди, по которому
-    можно проверить статус и получить результат
-
-    context_data - list[str], список текстов существующих постов в
-    паблике (лучше не менее 3-5 непустых текстов )
-
-    hint - str, запрос на генерацию контента. Содержит текст, который
-    надо перефразировать
-
-    group_id - int, айди группы, для которой генерируется пост. Нужно
-    чтобы связать генерацию с группой и потом выдавать статистику для
-    группы по этому айди
-    """
-    return process_method(
-        "rephrase_text",
-        data,
-        background_tasks,
-        Authorization,
-    )
-
-
-@app.post("/summarize_text", response_model=GenerateID)
-def summarize_text(
-    data: GenerateQueryModel,
-    background_tasks: BackgroundTasks,
-    Authorization=Header(),
-):
-    """
-    Резюмирует поданный текст. Возвращает айди, по которому
-    можно проверить статус и получить результат
-
-    context_data - list[str], список текстов существующих постов в
-    паблике (лучше не менее 3-5 непустых текстов )
-
-    hint - str, запрос на генерацию контента. Содержит текст (лучше
-    длинный), который надо сжать
-
-    group_id - int, айди группы, для которой генерируется пост. Нужно
-    чтобы связать генерацию с группой и потом выдавать статистику для
-    группы по этому айди
-    """
-    return process_method(
-        "summarize_text",
-        data,
-        background_tasks,
-        Authorization,
-    )
-
-
-@app.post("/extend_text", response_model=GenerateID)
-def extend_text(
-    data: GenerateQueryModel,
-    background_tasks: BackgroundTasks,
-    Authorization=Header(),
-):
-    """
-    Расширяет поданный текст. Предполагается, что на вход идет уже
-    большой осмысленный текст и он становится еще более красочным и большим
-    Возвращает айди, по которому можно проверить статус и получить
-    результат
-
-    context_data - list[str], список текстов существующих постов
-    в паблике (лучше не менее 3-5 непустых текстов )
-
-    hint - str, запрос на генерацию контента. Содержит текст (лучше короткий),
-    который надо удлинить
-
-    group_id - int, айди группы, для которой генерируется пост. Нужно чтобы
-    связать генерацию с группой и потом выдавать статистику для группы по
-    этому айди
-    """
-    return process_method("extend_text", data, background_tasks, Authorization)
-
-
-@app.post("/unmask_text", response_model=GenerateID)
-def unmask_text(
-    data: GenerateQueryModel,
-    background_tasks: BackgroundTasks,
-    Authorization=Header(),
-):
-    """
-    Заменяет `<MASK>` на наиболее подходящие слова или предложения.
-    Возвращает айди, по которому можно проверить статус и получить
-    результат
-
-    context_data - list[str], список текстов существующих постов в
-    паблике (лучше не менее 3-5 непустых текстов )
-
-    hint - str, запрос на генерацию контента. Строка, в которой есть
-    хотя бы одно ключевое слово `<MASK>`
-
-    group_id - int, айди группы, для которой генерируется пост. Нужно
-    чтобы связать генерацию с группой и потом выдавать статистику для
-    группы по этому айди
-    """
-    return process_method("unmask_text", data, background_tasks, Authorization)
-
-
-@app.get("/get_gen_status", response_model=GenerateStatus)
-def get_gen_status(text_id, Authorization=Header()):
+@app.get(
+    "/api/v1/generation/status",
+    response_model=GenerateStatus,
+    tags=["Генерация"],
+)
+def get_status(text_id, Authorization=Header()):
     """
     Возвращает статус генерации, 0 - не готово, 1 - готово,
     2 - ошибка
@@ -640,8 +492,12 @@ def get_gen_status(text_id, Authorization=Header()):
         )
 
 
-@app.get("/get_gen_result", response_model=GenerateResult)
-def get_gen_result(text_id, Authorization=Header()):
+@app.get(
+    "/api/v1/generation/result",
+    response_model=GenerateResult,
+    tags=["Генерация"],
+)
+def get_result(text_id, Authorization=Header()):
     """
     Возвращает результат генерации по айди
 

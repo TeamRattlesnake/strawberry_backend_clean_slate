@@ -67,6 +67,7 @@ class Database:
             ),
             Column("platform", String(128), nullable=False),
             Column("published", Integer, nullable=False),
+            Column("hidden", Integer, nullable=False),
         )
 
     def need_migration(self) -> bool:
@@ -113,6 +114,7 @@ class Database:
                     rating=0,
                     platform=platform,
                     published=0,
+                    hidden=0,
                 )
                 connection.execute(insert_query)
 
@@ -169,6 +171,22 @@ class Database:
         except Exception as exc:
             raise DBException(f"Error in change_rating: {exc}") from exc
 
+    def hide_generation(self, text_id: int):
+        """
+        Прячет пост и он не отправляется больше в истории
+        """
+        try:
+            with self.engine.connect() as connection:
+                update_query = (
+                    update(self.generated_data)
+                    .where(self.generated_data.c.id == text_id)
+                    .values(hidden=1)
+                )
+
+                connection.execute(update_query)
+        except Exception as exc:
+            raise DBException(f"Error in hide_generation: {exc}") from exc
+
     def write_published(self, text_id: int):
         """
         Ставит генерации оценку
@@ -201,11 +219,13 @@ class Database:
                         (self.generated_data.c.user_id == user_id)
                         & (self.generated_data.c.group_id == group_id)
                         & (self.generated_data.c.status == 1)
+                        & (self.generated_data.c.hidden == 0)
                     )
                 else:
                     select_query = select(self.generated_data).where(
                         (self.generated_data.c.user_id == user_id)
                         & (self.generated_data.c.status == 1)
+                        & (self.generated_data.c.hidden == 0)
                     )
 
                 response = connection.execute(select_query).fetchall()
@@ -226,6 +246,7 @@ class Database:
                             gen_time=row[9],
                             platform=row[10],
                             published=row[11],
+                            hidden=row[12],
                         )
                     ]
                 return result

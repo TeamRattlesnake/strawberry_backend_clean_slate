@@ -6,13 +6,27 @@ from enum import Enum
 from pydantic import BaseModel
 
 
-class Score(int, Enum):
+class Feedback(int, Enum):
     """
-    Модель, содержащая лайк или дизайк
+    Модель, содержащая фидбек
     """
 
     LIKE = 1
     DISLIKE = -1
+    PUBLISHED = 5
+
+
+class GenerationMethod(str, Enum):
+    """
+    Модель, содержащая методы генерации
+    """
+
+    GENERATE = "generate_text"
+    APPEND = "append_text"
+    REPHRASE = "rephrase_text"
+    SUMMARIZE = "summarize_text"
+    EXTEND = "extend_text"
+    UNMASK = "unmask_text"
 
 
 class FeedbackModel(BaseModel):
@@ -22,27 +36,21 @@ class FeedbackModel(BaseModel):
 
     result_id - int, номер результата работы сервиса.
 
-    score - Score, оценка результата, -1 или 1
+    feedback - Feedback, оценка результата, -1, 1, 5
     """
 
     result_id: int
-    score: Score
-
-
-class PublishedModel(BaseModel):
-    """
-    Модель для отправки факта о публикации
-
-    result_id - int, номер результата работы сервиса.
-    """
-
-    result_id: int
+    feedback: Feedback
 
 
 class GenerateQueryModel(BaseModel):
     """
     Модель для запроса генерации. Берет на вход данные для
     контекста (массив строк) и строку с запросом
+
+    method - GenerationMethod, строка с описанием метода генерации.
+    Доступныезначения: "generate_text", "append_text", "rephrase_text",
+    "summarize_text", "extend_text", "unmask_text"
 
     context_data - list[str], список текстов существующих
     постов в паблике (лучше не менее 3-5 непустых текстов )
@@ -55,6 +63,7 @@ class GenerateQueryModel(BaseModel):
     статистику для группы по этому айди
     """
 
+    method: GenerationMethod
     context_data: list[str]
     hint: str
     group_id: int
@@ -221,6 +230,8 @@ class GenerateResultInfo(BaseModel):
     platform : str - платформа, с которой отправлен запрос
 
     published : int - 0 - не опубликовано, 1 - опубликовано
+
+    hidden : int - 0 - виден, 1 - спрятан
     """
 
     post_id: int
@@ -235,6 +246,7 @@ class GenerateResultInfo(BaseModel):
     gen_time: int
     platform: str
     published: int
+    hidden: int
 
 
 class UserResults(BaseModel):
