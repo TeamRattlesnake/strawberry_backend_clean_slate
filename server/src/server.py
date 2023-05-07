@@ -279,7 +279,7 @@ def ask_nn(
     gen_id: int,
 ):
     """
-    Общий метод для вызова функций работы с ChatGPT
+    Общий метод для вызова функций работы с нейросетью
     """
 
     time_start = int(time.time())
@@ -419,7 +419,7 @@ def generate(
     Метод для генерации текстового контета нейросетью выбранным способом
 
     method - GenerationMethod, строка с описанием метода генерации.
-    Доступныезначения: "generate_text", "append_text", "rephrase_text",
+    Доступные значения: "generate_text", "append_text", "rephrase_text",
     "summarize_text", "extend_text", "unmask_text"
 
     context_data - list[str], список текстов существующих постов
