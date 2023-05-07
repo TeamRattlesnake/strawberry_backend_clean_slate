@@ -29,15 +29,3 @@ class Config:
         self.summarize_context_path = data["summarize_context_path"]
         self.extend_context_path = data["extend_context_path"]
         self.unmask_context_path = data["unmask_context_path"]
-
-        self.api_tokens = data["api_tokens"]
-        self.tokens_cycle = cycle(self.api_tokens)
-
-        if len(self.api_tokens) == 0:
-            raise Exception("No api tokens in config file")
-
-    def next_token(self) -> str:
-        """
-        Возвращает токены по кругу. Чем больше токенов в конфиге, тем лучше!
-        """
-        return next(self.tokens_cycle)

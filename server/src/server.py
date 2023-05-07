@@ -77,7 +77,7 @@ DESCRIPTION = """
 Strawberry!
 
 * Коленков Андрей - Team Lead, Backend Python Dev 🍓
-* Роман Медников - Frontend React Dev, ChatGPT Enthusiast 🍓
+* Роман Медников - Frontend React Dev, ChatGPT Enthusiast, Perplexity Enthusiast 🍓
 * Василий Ермаков - Data Scientist 🍓
 
 Наш паблик: [Strawberry - Помощник в ведении сообщества](https://vk.com/strawberry_ai)
@@ -179,7 +179,9 @@ def send_feedback(data: FeedbackModel, Authorization=Header()):
 
 
 @app.get(
-    "/api/v1/stats/history", response_model=UserResults, tags=["Статистика"]
+    "/api/v1/stats/history",
+    response_model=UserResults,
+    tags=["Статистика"],
 )
 def get_history(
     group_id: int = None,
@@ -270,14 +272,14 @@ def get_history(
         )
 
 
-def ask_chatgpt(
+def ask_nn(
     gen_method: str,
     texts: list[str],
     hint: str,
     gen_id: int,
 ):
     """
-    Общий метод для вызова функций работы с ChatGPT
+    Общий метод для вызова функций работы с нейросетью
     """
 
     time_start = int(time.time())
@@ -287,7 +289,7 @@ def ask_chatgpt(
     )
 
     try:
-        api = NNApi(config.next_token())
+        api = NNApi()
 
         if gen_method == "generate_text":
             api.load_context(config.gen_context_path)
@@ -394,7 +396,7 @@ def process_method(
             data=GenerateResultID(text_id=-1),
         )
 
-    background_tasks.add_task(ask_chatgpt, method, texts, hint, gen_id)
+    background_tasks.add_task(ask_nn, method, texts, hint, gen_id)
 
     return GenerateID(
         status=0,
@@ -404,7 +406,9 @@ def process_method(
 
 
 @app.post(
-    "/api/v1/generation/generate", response_model=GenerateID, tags=["Генерация"]
+    "/api/v1/generation/generate",
+    response_model=GenerateID,
+    tags=["Генерация"],
 )
 def generate(
     data: GenerateQueryModel,
@@ -415,7 +419,7 @@ def generate(
     Метод для генерации текстового контета нейросетью выбранным способом
 
     method - GenerationMethod, строка с описанием метода генерации.
-    Доступныезначения: "generate_text", "append_text", "rephrase_text",
+    Доступные значения: "generate_text", "append_text", "rephrase_text",
     "summarize_text", "extend_text", "unmask_text"
 
     context_data - list[str], список текстов существующих постов
