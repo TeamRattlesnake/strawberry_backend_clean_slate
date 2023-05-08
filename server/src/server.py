@@ -289,7 +289,7 @@ def ask_nn(
     )
 
     try:
-        api = NNApi()
+        api = NNApi(token=config.next_token())
 
         if gen_method == "generate_text":
             api.load_context(config.gen_context_path)
@@ -340,6 +340,9 @@ def process_method(
     background_tasks: BackgroundTasks,
     Authorization=Header(),
 ):
+    """
+    Общий метод для обработки запроса на генерацию
+    """
     try:
         auth_data = parse_query_string(Authorization)
         if not is_valid(query=auth_data, secret=config.client_secret):
