@@ -106,7 +106,7 @@ class NNApi:
                 model="gpt-3.5-turbo",
                 messages=[{"role": "user", "content": self.query}],
             )
-            self.result = completion.choises[0].message.content
+            self.result = completion.choiсes[0].message.content
         except Exception as exc:
             raise NNException(f"Error in send_request: {exc}") from exc
 
