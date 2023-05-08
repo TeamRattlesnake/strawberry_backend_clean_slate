@@ -7,7 +7,7 @@ import requests
 import socketio
 
 NN_URL = "https://www.perplexity.ai/socket.io/"
-MAX_WORDS_LEN = 2800
+MAX_WORDS_LEN = 4000
 NO_SOURCE_TEXTS_REPLACEMENT = (
     "Старых постов в сообществе нет, так что придумай что-то креативное"
 )

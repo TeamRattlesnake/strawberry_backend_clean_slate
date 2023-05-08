@@ -48,7 +48,7 @@ class Database:
             ),
             Column("user_id", Integer, nullable=False),
             Column("method", String(128), nullable=False),
-            Column("query", String(3072), nullable=False),
+            Column("query", String(4096), nullable=False),
             Column(
                 "text",
                 String(4096),
