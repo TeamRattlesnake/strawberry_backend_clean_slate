@@ -4,10 +4,10 @@
 
 import json
 import requests
-import socketio
+import openai
 
 NN_URL = "https://www.perplexity.ai/socket.io/"
-MAX_WORDS_LEN = 4000
+MAX_WORDS_LEN = 2900
 NO_SOURCE_TEXTS_REPLACEMENT = (
     "Старых постов в сообществе нет, так что придумай что-то креативное"
 )
@@ -29,27 +29,8 @@ class NNApi:
     Класс для подготовки запросов и общения с API нейросети
     """
 
-    def __init__(self, proxies: dict = {}):
-        self.headers = {
-            "authority": "www.perplexity.ai",
-            "accept": "*/*",
-            "accept-language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
-            "cache-control": "no-cache",
-            "pragma": "no-cache",
-            "sec-ch-ua": '"Chromium";v="112", "Google Chrome";v="112", "Not:A-Brand";v="99"',
-            "sec-ch-ua-mobile": "?0",
-            "sec-ch-ua-platform": '"macOS"',
-            "sec-fetch-dest": "empty",
-            "sec-fetch-mode": "cors",
-            "sec-fetch-site": "same-origin",
-            "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36",
-        }
-        if proxies:
-            session = requests.Session()
-            session.proxies.update(proxies)
-        else:
-            session = None
-        self.sio = socketio.Client(http_session=session)
+    def __init__(self, token: str):
+        openai.api_key = token
         self.context = ""
         self.query = ""
         self.result = ""
@@ -122,34 +103,11 @@ class NNApi:
         Отправляет запрос к API нейросети
         """
         try:
-            self.sio.connect(NN_URL, self.headers, wait_timeout=10)
-            res = self.sio.call(
-                "perplexity_ask",
-                (
-                    self.query,
-                    {
-                        "source": "default",
-                        "token": "f864657",
-                        "last_backend_uuid": None,
-                        "read_write_token": None,
-                        "conversational_enabled": True,
-                        "frontend_session_id": "7a3cf0f5-45eb-47a9-b87a-a666c5c3e826",
-                        "language": "ru-RU",
-                        "timezone": "Europe/Moscow",
-                        "search_focus": "internet",
-                        "frontend_uuid": "2615be01-fd68-4238-b1cc-02ad601f55ee",
-                        "web_search_images": False,
-                        "gpt4": False,
-                    },
-                ),
+            completion = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "user", "content": self.query}],
             )
-            if not res:
-                res = {}
-            text_str = res.get("text", "")
-            if text_str == "Query rate limit exceeded. Please try again later.":
-                raise NNException("Rate limit exceeded")
-            self.result = json.loads(text_str).get("answer", None)
-            self.sio.disconnect()
+            self.result = completion.choises[0].message.content
         except Exception as exc:
             raise NNException(f"Error in send_request: {exc}") from exc
 
