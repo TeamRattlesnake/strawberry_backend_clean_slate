@@ -108,7 +108,7 @@ class NNApi:
             )
             self.result = completion.choices[0].message.content
         except Exception as exc:
-            raise NNException(f"Completion: {completion}\nError in send_request: {exc}") from exc
+            raise NNException(f"Error in send_request: {exc}") from exc
 
     def get_result(self) -> str:
         """

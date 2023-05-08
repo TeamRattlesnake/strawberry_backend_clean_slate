@@ -36,7 +36,7 @@ class FeedbackModel(BaseModel):
 
     result_id - int, номер результата работы сервиса.
 
-    feedback - Feedback, оценка результата, -1, 1, 5
+    feedback - Feedback, оценка результата, -1 - дизлайк, 1 - лайк, 5 - опубликовано
     """
 
     result_id: int

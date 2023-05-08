@@ -137,7 +137,7 @@ def send_feedback(data: FeedbackModel, Authorization=Header()):
 
     result_id - int, номер результата работы сервиса.
 
-    feedback - Feedback, оценка результата, -1, 1, 5
+    feedback - Feedback, оценка результата, -1 - дизлайк, 1 - лайк, 5 - опубликовано
 
     """
 
@@ -155,19 +155,19 @@ def send_feedback(data: FeedbackModel, Authorization=Header()):
         )
 
     result_id = data.result_id
-    score = int(data.score)
+    feedback = int(data.feedback)
 
-    logging.info(f"/send_feedback\tresult_id={result_id}; score={score}")
+    logging.info(f"/send_feedback\tresult_id={result_id}; feedback={feedback}")
 
     try:
-        if score in [-1, 1]:
-            db.write_feedback(result_id, score)
-        if score == 5:
+        if feedback in [-1, 1]:
+            db.write_feedback(result_id, feedback)
+        if feedback == 5:
             db.write_published(result_id)
-        if score == -1:
+        if feedback == -1:
             db.hide_generation(result_id)
         logging.info(
-            f"/send_feedback\tresult_id={result_id}; score={score}\tOK"
+            f"/send_feedback\tresult_id={result_id}; feedback={feedback}\tOK"
         )
         return SendFeedbackResult(status=0, message="Score updated")
     except DBException as exc:
