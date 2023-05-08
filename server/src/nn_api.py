@@ -29,7 +29,7 @@ class NNApi:
     Класс для подготовки запросов и общения с API нейросети
     """
 
-    def __init__(self, proxies):
+    def __init__(self, proxies: dict = {}):
         self.headers = {
             "authority": "www.perplexity.ai",
             "accept": "*/*",
