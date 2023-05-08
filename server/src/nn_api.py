@@ -1,12 +1,11 @@
 """
-Модуль с реализацией общения с апи нейросетей, работа с API: @Jellybe
+Модуль с реализацией общения с апи нейросетей
 """
 
 import json
 import requests
 import openai
 
-NN_URL = "https://www.perplexity.ai/socket.io/"
 MAX_WORDS_LEN = 2900
 NO_SOURCE_TEXTS_REPLACEMENT = (
     "Старых постов в сообществе нет, так что придумай что-то креативное"
