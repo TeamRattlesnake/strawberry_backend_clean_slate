@@ -50,7 +50,6 @@ class NNApi:
         else:
             session = None
         self.sio = socketio.Client(http_session=session)
-        self.sio.connect(NN_URL, self.headers, wait_timeout=10)
         self.context = ""
         self.query = ""
         self.result = ""
@@ -123,6 +122,7 @@ class NNApi:
         Отправляет запрос к API нейросети
         """
         try:
+            self.sio.connect(NN_URL, self.headers, wait_timeout=10)
             res = self.sio.call(
                 "perplexity_ask",
                 (
@@ -149,6 +149,7 @@ class NNApi:
             if text_str == "Query rate limit exceeded. Please try again later.":
                 raise NNException("Rate limit exceeded")
             self.result = json.loads(text_str).get("answer", None)
+            self.sio.disconnect()
         except Exception as exc:
             raise NNException(f"Error in send_request: {exc}") from exc
 
@@ -156,5 +157,4 @@ class NNApi:
         """
         Возвращает ответ нейросети
         """
-        self.sio.disconnect()
         return self.result
