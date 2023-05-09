@@ -6,16 +6,6 @@ from enum import Enum
 from pydantic import BaseModel
 
 
-class Feedback(int, Enum):
-    """
-    Модель, содержащая фидбек
-    """
-
-    LIKE = 1
-    DISLIKE = -1
-    PUBLISHED = 5
-
-
 class GenerationMethod(str, Enum):
     """
     Модель, содержащая методы генерации
@@ -27,20 +17,6 @@ class GenerationMethod(str, Enum):
     SUMMARIZE = "summarize_text"
     EXTEND = "extend_text"
     UNMASK = "unmask_text"
-
-
-class FeedbackModel(BaseModel):
-    """
-    Модель содержащая обратную связь по
-    результаты руботы сервиса
-
-    result_id - int, номер результата работы сервиса.
-
-    feedback - Feedback, оценка результата, -1 - дизлайк, 1 - лайк, 5 - опубликовано
-    """
-
-    result_id: int
-    feedback: Feedback
 
 
 class GenerateQueryModel(BaseModel):
