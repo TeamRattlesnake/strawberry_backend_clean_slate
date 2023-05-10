@@ -30,9 +30,7 @@ class Database:
     Класс с логикой для взаимодействия с базой данных MariaDB/MySQL
     """
 
-    def __init__(
-        self, user, password, database, port, host
-    ):
+    def __init__(self, user, password, database, port, host):
         self.database_uri = f"mysql+pymysql://{user}:{password}@{host}:{port}/{database}?charset=utf8mb4"
         self.engine = create_engine(self.database_uri)
 
@@ -77,15 +75,11 @@ class Database:
         Проверяет, нужна ли миграция
         """
         try:
-            if not inspect(self.engine).has_table(
-                "generated_data"
-            ):
+            if not inspect(self.engine).has_table("generated_data"):
                 return True
             return False
         except Exception as exc:
-            raise DBException(
-                f"Error in need_migration: {exc}"
-            ) from exc
+            raise DBException(f"Error in need_migration: {exc}") from exc
 
     def migrate(self):
         """
@@ -94,9 +88,7 @@ class Database:
         try:
             self.meta.create_all(self.engine)
         except Exception as exc:
-            raise DBException(
-                f"Error in migrate: {exc}"
-            ) from exc
+            raise DBException(f"Error in migrate: {exc}") from exc
 
     def add_record(
         self,
@@ -112,9 +104,7 @@ class Database:
         """
         try:
             with self.engine.connect() as connection:
-                insert_query = insert(
-                    self.generated_data
-                ).values(
+                insert_query = insert(self.generated_data).values(
                     query=query,
                     user_id=user_id,
                     method=gen_method,
@@ -128,27 +118,16 @@ class Database:
                 )
                 connection.execute(insert_query)
 
-                get_id_query = select(
-                    self.generated_data.c.id
-                ).where(
+                get_id_query = select(self.generated_data.c.id).where(
                     (self.generated_data.c.query == query)
-                    & (
-                        self.generated_data.c.unix_date
-                        == unix_date
-                    )
+                    & (self.generated_data.c.unix_date == unix_date)
                 )
 
-                text_id = int(
-                    connection.execute(
-                        get_id_query
-                    ).fetchall()[0][0]
-                )
+                text_id = int(connection.execute(get_id_query).fetchall()[0][0])
 
                 return text_id
         except Exception as exc:
-            raise DBException(
-                f"Error in add_record: {exc}"
-            ) from exc
+            raise DBException(f"Error in add_record: {exc}") from exc
 
     def add_record_result(
         self,
@@ -165,9 +144,7 @@ class Database:
             with self.engine.connect() as connection:
                 update_query = (
                     update(self.generated_data)
-                    .where(
-                        self.generated_data.c.id == text_id
-                    )
+                    .where(self.generated_data.c.id == text_id)
                     .values(
                         text=text,
                         gen_time=gen_time,
@@ -176,9 +153,7 @@ class Database:
                 )
                 connection.execute(update_query)
         except Exception as exc:
-            raise DBException(
-                f"Error in add_record_result: {exc}"
-            ) from exc
+            raise DBException(f"Error in add_record_result: {exc}") from exc
 
     def write_feedback(self, text_id: int, new_score: int):
         """
@@ -188,37 +163,29 @@ class Database:
             with self.engine.connect() as connection:
                 update_query = (
                     update(self.generated_data)
-                    .where(
-                        self.generated_data.c.id == text_id
-                    )
+                    .where(self.generated_data.c.id == text_id)
                     .values(rating=new_score)
                 )
 
                 connection.execute(update_query)
         except Exception as exc:
-            raise DBException(
-                f"Error in change_rating: {exc}"
-            ) from exc
+            raise DBException(f"Error in change_rating: {exc}") from exc
 
-    def hide_generation(self, text_id: int, hidden=1):
+    def hide_generation(self, text_id: int):
         """
-        Прячет (и открывает) пост и он не отправляется больше в истории
+        Прячет пост и он не отправляется больше в истории
         """
         try:
             with self.engine.connect() as connection:
                 update_query = (
                     update(self.generated_data)
-                    .where(
-                        self.generated_data.c.id == text_id
-                    )
-                    .values(hidden=hidden)
+                    .where(self.generated_data.c.id == text_id)
+                    .values(hidden=1)
                 )
 
                 connection.execute(update_query)
         except Exception as exc:
-            raise DBException(
-                f"Error in hide_generation: {exc}"
-            ) from exc
+            raise DBException(f"Error in hide_generation: {exc}") from exc
 
     def write_published(self, text_id: int):
         """
@@ -228,17 +195,13 @@ class Database:
             with self.engine.connect() as connection:
                 update_query = (
                     update(self.generated_data)
-                    .where(
-                        self.generated_data.c.id == text_id
-                    )
+                    .where(self.generated_data.c.id == text_id)
                     .values(published=1)
                 )
 
                 connection.execute(update_query)
         except Exception as exc:
-            raise DBException(
-                f"Error in change_rating: {exc}"
-            ) from exc
+            raise DBException(f"Error in change_rating: {exc}") from exc
 
     def get_users_texts(
         self,
@@ -252,47 +215,20 @@ class Database:
             with self.engine.connect() as connection:
 
                 if group_id:
-                    select_query = select(
-                        self.generated_data
-                    ).where(
-                        (
-                            self.generated_data.c.user_id
-                            == user_id
-                        )
-                        & (
-                            self.generated_data.c.group_id
-                            == group_id
-                        )
-                        & (
-                            self.generated_data.c.status
-                            == 1
-                        )
-                        & (
-                            self.generated_data.c.hidden
-                            == 0
-                        )
+                    select_query = select(self.generated_data).where(
+                        (self.generated_data.c.user_id == user_id)
+                        & (self.generated_data.c.group_id == group_id)
+                        & (self.generated_data.c.status == 1)
+                        & (self.generated_data.c.hidden == 0)
                     )
                 else:
-                    select_query = select(
-                        self.generated_data
-                    ).where(
-                        (
-                            self.generated_data.c.user_id
-                            == user_id
-                        )
-                        & (
-                            self.generated_data.c.status
-                            == 1
-                        )
-                        & (
-                            self.generated_data.c.hidden
-                            == 0
-                        )
+                    select_query = select(self.generated_data).where(
+                        (self.generated_data.c.user_id == user_id)
+                        & (self.generated_data.c.status == 1)
+                        & (self.generated_data.c.hidden == 0)
                     )
 
-                response = connection.execute(
-                    select_query
-                ).fetchall()
+                response = connection.execute(select_query).fetchall()
 
                 result = []
                 for row in response:
@@ -316,9 +252,7 @@ class Database:
                 return result
 
         except Exception as exc:
-            raise DBException(
-                f"Error in get_users_texts: {exc}"
-            ) from exc
+            raise DBException(f"Error in get_users_texts: {exc}") from exc
 
     def get_status(self, text_id: int) -> str:
         """
@@ -326,20 +260,16 @@ class Database:
         """
         try:
             with self.engine.connect() as connection:
-                get_status_query = select(
-                    self.generated_data.c.status
-                ).where(self.generated_data.c.id == text_id)
+                get_status_query = select(self.generated_data.c.status).where(
+                    self.generated_data.c.id == text_id
+                )
                 status = int(
-                    connection.execute(
-                        get_status_query
-                    ).fetchall()[0][0]
+                    connection.execute(get_status_query).fetchall()[0][0]
                 )
 
                 return status
         except Exception as exc:
-            raise DBException(
-                f"Error in get_status: {exc}"
-            ) from exc
+            raise DBException(f"Error in get_status: {exc}") from exc
 
     def get_value(self, text_id) -> str:
         """
@@ -347,17 +277,11 @@ class Database:
         """
         try:
             with self.engine.connect() as connection:
-                get_text_query = select(
-                    self.generated_data.c.text
-                ).where(self.generated_data.c.id == text_id)
-                text = str(
-                    connection.execute(
-                        get_text_query
-                    ).fetchall()[0][0]
+                get_text_query = select(self.generated_data.c.text).where(
+                    self.generated_data.c.id == text_id
                 )
+                text = str(connection.execute(get_text_query).fetchall()[0][0])
 
                 return text
         except Exception as exc:
-            raise DBException(
-                f"Error in get_value: {exc}"
-            ) from exc
+            raise DBException(f"Error in get_value: {exc}") from exc
