@@ -171,16 +171,16 @@ class Database:
         except Exception as exc:
             raise DBException(f"Error in change_rating: {exc}") from exc
 
-    def hide_generation(self, text_id: int):
+    def hide_generation(self, text_id: int, hidden=1):
         """
-        Прячет пост и он не отправляется больше в истории
+        Прячет (и открывает) пост и он не отправляется больше в истории
         """
         try:
             with self.engine.connect() as connection:
                 update_query = (
                     update(self.generated_data)
                     .where(self.generated_data.c.id == text_id)
-                    .values(hidden=1)
+                    .values(hidden=hidden)
                 )
 
                 connection.execute(update_query)

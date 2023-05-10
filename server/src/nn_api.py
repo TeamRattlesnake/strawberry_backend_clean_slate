@@ -2,8 +2,6 @@
 Модуль с реализацией общения с апи нейросетей
 """
 
-import json
-import requests
 import openai
 
 MAX_WORDS_LEN = 2900

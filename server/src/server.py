@@ -10,7 +10,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
 from models import (
-    FeedbackModel,
     GenerateQueryModel,
     SendFeedbackResult,
     GenerateResultID,
@@ -127,20 +126,17 @@ def startup():
 
 
 @app.post(
-    "/api/v1/stats/feedback",
+    "/api/v1/post/{post_id}/like",
     response_model=SendFeedbackResult,
-    tags=["Статистика"],
+    tags=["Действия с готовым постом"],
 )
-def send_feedback(data: FeedbackModel, Authorization=Header()):
+def send_like(post_id: int, Authorization=Header()):
     """
-    Метод для отправки фидбека по результату работы сервиса.
+    Метод для отправки лайка на пост
 
-    result_id - int, номер результата работы сервиса.
-
-    feedback - Feedback, оценка результата, -1 - дизлайк, 1 - лайк, 5 - опубликовано
+    post_id - айди генерации, полученный из generate
 
     """
-
     try:
         auth_data = parse_query_string(Authorization)
         if not is_valid(query=auth_data, secret=config.client_secret):
@@ -154,21 +150,177 @@ def send_feedback(data: FeedbackModel, Authorization=Header()):
             message="Error in utils, probably the request was not correct",
         )
 
-    result_id = data.result_id
-    feedback = int(data.feedback)
+    result_id = int(post_id)
 
-    logging.info(f"/send_feedback\tresult_id={result_id}; feedback={feedback}")
+    logging.info(f"/like\tid={post_id}")
 
     try:
-        if feedback in [-1, 1]:
-            db.write_feedback(result_id, feedback)
-        if feedback == 5:
-            db.write_published(result_id)
-        if feedback == -1:
-            db.hide_generation(result_id)
-        logging.info(
-            f"/send_feedback\tresult_id={result_id}; feedback={feedback}\tOK"
+        db.write_feedback(result_id, 1)
+        logging.info(logging.info(f"/like\tid={post_id}\tOK"))
+        return SendFeedbackResult(status=0, message="Score updated")
+    except DBException as exc:
+        logging.error(f"Error in database: {exc}")
+        return SendFeedbackResult(status=6, message="Error in database")
+    except Exception as exc:
+        logging.error(f"Unknown error: {exc}")
+        return SendFeedbackResult(status=4, message="Unknown error")
+
+
+@app.post(
+    "/api/v1/post/{post_id}/dislike",
+    response_model=SendFeedbackResult,
+    tags=["Действия с готовым постом"],
+)
+def send_dislike(post_id: int, Authorization=Header()):
+    """
+    Метод для отправки дизлайка на пост
+
+    post_id - айди генерации, полученный из generate
+
+    """
+    try:
+        auth_data = parse_query_string(Authorization)
+        if not is_valid(query=auth_data, secret=config.client_secret):
+            return SendFeedbackResult(status=1, message="Authorization error")
+    except UtilsException as exc:
+        logging.error(
+            f"Error in utils, probably the request was not correct: {exc}"
         )
+        return SendFeedbackResult(
+            status=3,
+            message="Error in utils, probably the request was not correct",
+        )
+
+    result_id = int(post_id)
+
+    logging.info(f"/dislike\tid={post_id}")
+
+    try:
+        db.write_feedback(result_id, -1)
+        logging.info(logging.info(f"/dislike\tid={post_id}\tOK"))
+        return SendFeedbackResult(status=0, message="Score updated")
+    except DBException as exc:
+        logging.error(f"Error in database: {exc}")
+        return SendFeedbackResult(status=6, message="Error in database")
+    except Exception as exc:
+        logging.error(f"Unknown error: {exc}")
+        return SendFeedbackResult(status=4, message="Unknown error")
+
+
+@app.delete(
+    "/api/v1/post/{post_id}",
+    response_model=SendFeedbackResult,
+    tags=["Действия с готовым постом"],
+)
+def send_hidden(post_id: int, Authorization=Header()):
+    """
+    Метод для отправки дизлайка на пост
+
+    post_id - айди генерации, полученный из generate
+
+    """
+    try:
+        auth_data = parse_query_string(Authorization)
+        if not is_valid(query=auth_data, secret=config.client_secret):
+            return SendFeedbackResult(status=1, message="Authorization error")
+    except UtilsException as exc:
+        logging.error(
+            f"Error in utils, probably the request was not correct: {exc}"
+        )
+        return SendFeedbackResult(
+            status=3,
+            message="Error in utils, probably the request was not correct",
+        )
+
+    result_id = int(post_id)
+
+    logging.info(f"/delete\tid={post_id}")
+
+    try:
+        db.hide_generation(result_id, 1)
+        logging.info(logging.info(f"/delete\tid={post_id}\tOK"))
+        return SendFeedbackResult(status=0, message="Score updated")
+    except DBException as exc:
+        logging.error(f"Error in database: {exc}")
+        return SendFeedbackResult(status=6, message="Error in database")
+    except Exception as exc:
+        logging.error(f"Unknown error: {exc}")
+        return SendFeedbackResult(status=4, message="Unknown error")
+
+
+@app.post(
+    "/api/v1/post/{post_id}/recover",
+    response_model=SendFeedbackResult,
+    tags=["Действия с готовым постом"],
+)
+def send_recovered(post_id: int, Authorization=Header()):
+    """
+    Метод для отправки дизлайка на пост
+
+    post_id - айди генерации, полученный из generate
+
+    """
+    try:
+        auth_data = parse_query_string(Authorization)
+        if not is_valid(query=auth_data, secret=config.client_secret):
+            return SendFeedbackResult(status=1, message="Authorization error")
+    except UtilsException as exc:
+        logging.error(
+            f"Error in utils, probably the request was not correct: {exc}"
+        )
+        return SendFeedbackResult(
+            status=3,
+            message="Error in utils, probably the request was not correct",
+        )
+
+    result_id = int(post_id)
+
+    logging.info(f"/recover\tid={post_id}")
+
+    try:
+        db.hide_generation(result_id, 0)
+        logging.info(logging.info(f"/recover\tid={post_id}\tOK"))
+        return SendFeedbackResult(status=0, message="Score updated")
+    except DBException as exc:
+        logging.error(f"Error in database: {exc}")
+        return SendFeedbackResult(status=6, message="Error in database")
+    except Exception as exc:
+        logging.error(f"Unknown error: {exc}")
+        return SendFeedbackResult(status=4, message="Unknown error")
+
+
+@app.post(
+    "/api/v1/post/{post_id}/publish",
+    response_model=SendFeedbackResult,
+    tags=["Действия с готовым постом"],
+)
+def send_published(post_id: int, Authorization=Header()):
+    """
+    Метод для отправки дизлайка на пост
+
+    post_id - айди генерации, полученный из generate
+
+    """
+    try:
+        auth_data = parse_query_string(Authorization)
+        if not is_valid(query=auth_data, secret=config.client_secret):
+            return SendFeedbackResult(status=1, message="Authorization error")
+    except UtilsException as exc:
+        logging.error(
+            f"Error in utils, probably the request was not correct: {exc}"
+        )
+        return SendFeedbackResult(
+            status=3,
+            message="Error in utils, probably the request was not correct",
+        )
+
+    result_id = int(post_id)
+
+    logging.info(f"/publish\tid={post_id}")
+
+    try:
+        db.write_published(result_id)
+        logging.info(logging.info(f"/publish\tid={post_id}\tOK"))
         return SendFeedbackResult(status=0, message="Score updated")
     except DBException as exc:
         logging.error(f"Error in database: {exc}")
@@ -179,7 +331,7 @@ def send_feedback(data: FeedbackModel, Authorization=Header()):
 
 
 @app.get(
-    "/api/v1/stats/history",
+    "/api/v1/posts",
     response_model=UserResults,
     tags=["Статистика"],
 )
@@ -232,7 +384,7 @@ def get_history(
     user_id = auth_data["vk_user_id"]
 
     logging.info(
-        f"/get_user_results\tvk_user_id={user_id}; group_id={group_id}; offset={offset}; limit={limit}"
+        f"/posts\tvk_user_id={user_id}; group_id={group_id}; offset={offset}; limit={limit}"
     )
 
     try:
@@ -243,7 +395,7 @@ def get_history(
         if limit:
             generated_results = generated_results[:limit]
         logging.info(
-            f"/get_user_results\tvk_user_id={user_id}; group_id={group_id}; offset={offset}; limit={limit}\tOK"
+            f"/posts\tvk_user_id={user_id}; group_id={group_id}; offset={offset}; limit={limit}\tOK"
         )
         return UserResults(
             status=0,
