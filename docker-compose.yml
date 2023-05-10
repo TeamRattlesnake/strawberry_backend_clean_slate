@@ -22,8 +22,6 @@ services:
         ]
     volumes:
       - ./mariadb:/var/lib/mysql
-    expose:
-      - 3306
     ports:
       - 3333:3306
     env_file:
