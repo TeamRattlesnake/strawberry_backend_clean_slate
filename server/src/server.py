@@ -152,11 +152,11 @@ def send_like(post_id: int, Authorization=Header()):
 
     result_id = int(post_id)
 
-    logging.info(f"/like\tid={post_id}")
+    logging.info(f"/like\tid={result_id}")
 
     try:
         db.write_feedback(result_id, 1)
-        logging.info(logging.info(f"/like\tid={post_id}\tOK"))
+        logging.info(logging.info(f"/like\tid={result_id}\tOK"))
         return SendFeedbackResult(status=0, message="Score updated")
     except DBException as exc:
         logging.error(f"Error in database: {exc}")
@@ -193,11 +193,11 @@ def send_dislike(post_id: int, Authorization=Header()):
 
     result_id = int(post_id)
 
-    logging.info(f"/dislike\tid={post_id}")
+    logging.info(f"/dislike\tid={result_id}")
 
     try:
         db.write_feedback(result_id, -1)
-        logging.info(logging.info(f"/dislike\tid={post_id}\tOK"))
+        logging.info(logging.info(f"/dislike\tid={result_id}\tOK"))
         return SendFeedbackResult(status=0, message="Score updated")
     except DBException as exc:
         logging.error(f"Error in database: {exc}")
@@ -214,7 +214,7 @@ def send_dislike(post_id: int, Authorization=Header()):
 )
 def send_hidden(post_id: int, Authorization=Header()):
     """
-    Метод для отправки дизлайка на пост
+    Метод для скрытия поста
 
     post_id - айди генерации, полученный из generate
 
@@ -234,11 +234,11 @@ def send_hidden(post_id: int, Authorization=Header()):
 
     result_id = int(post_id)
 
-    logging.info(f"/delete\tid={post_id}")
+    logging.info(f"/delete\tid={result_id}")
 
     try:
         db.hide_generation(result_id, 1)
-        logging.info(logging.info(f"/delete\tid={post_id}\tOK"))
+        logging.info(logging.info(f"/delete\tid={result_id}\tOK"))
         return SendFeedbackResult(status=0, message="Score updated")
     except DBException as exc:
         logging.error(f"Error in database: {exc}")
@@ -255,7 +255,7 @@ def send_hidden(post_id: int, Authorization=Header()):
 )
 def send_recovered(post_id: int, Authorization=Header()):
     """
-    Метод для отправки дизлайка на пост
+    Метод для восстановления поста
 
     post_id - айди генерации, полученный из generate
 
@@ -275,11 +275,11 @@ def send_recovered(post_id: int, Authorization=Header()):
 
     result_id = int(post_id)
 
-    logging.info(f"/recover\tid={post_id}")
+    logging.info(f"/recover\tid={result_id}")
 
     try:
         db.hide_generation(result_id, 0)
-        logging.info(logging.info(f"/recover\tid={post_id}\tOK"))
+        logging.info(logging.info(f"/recover\tid={result_id}\tOK"))
         return SendFeedbackResult(status=0, message="Score updated")
     except DBException as exc:
         logging.error(f"Error in database: {exc}")
@@ -296,7 +296,7 @@ def send_recovered(post_id: int, Authorization=Header()):
 )
 def send_published(post_id: int, Authorization=Header()):
     """
-    Метод для отправки дизлайка на пост
+    Метод для отправки а=факта о публикации на пост
 
     post_id - айди генерации, полученный из generate
 
@@ -316,11 +316,11 @@ def send_published(post_id: int, Authorization=Header()):
 
     result_id = int(post_id)
 
-    logging.info(f"/publish\tid={post_id}")
+    logging.info(f"/publish\tid={result_id}")
 
     try:
         db.write_published(result_id)
-        logging.info(logging.info(f"/publish\tid={post_id}\tOK"))
+        logging.info(logging.info(f"/publish\tid={result_id}\tOK"))
         return SendFeedbackResult(status=0, message="Score updated")
     except DBException as exc:
         logging.error(f"Error in database: {exc}")
