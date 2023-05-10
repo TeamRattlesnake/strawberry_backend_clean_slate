@@ -93,7 +93,7 @@ def custom_openapi():
         return app.openapi_schema
     openapi_schema = get_openapi(
         title="Strawberry🍓",
-        version="1.2.0 - Clean Slate",
+        version="1.5.0 - Предзащита",
         description=DESCRIPTION,
         routes=app.routes,
         contact={
@@ -157,7 +157,7 @@ def send_like(post_id: int, Authorization=Header()):
     try:
         db.write_feedback(result_id, 1)
         logging.info(logging.info(f"/like\tid={result_id}\tOK"))
-        return SendFeedbackResult(status=0, message="Score updated")
+        return SendFeedbackResult(status=0, message="Post is liked")
     except DBException as exc:
         logging.error(f"Error in database: {exc}")
         return SendFeedbackResult(status=6, message="Error in database")
@@ -198,7 +198,7 @@ def send_dislike(post_id: int, Authorization=Header()):
     try:
         db.write_feedback(result_id, -1)
         logging.info(logging.info(f"/dislike\tid={result_id}\tOK"))
-        return SendFeedbackResult(status=0, message="Score updated")
+        return SendFeedbackResult(status=0, message="Post is disliked")
     except DBException as exc:
         logging.error(f"Error in database: {exc}")
         return SendFeedbackResult(status=6, message="Error in database")
@@ -239,7 +239,7 @@ def send_hidden(post_id: int, Authorization=Header()):
     try:
         db.hide_generation(result_id, 1)
         logging.info(logging.info(f"/delete\tid={result_id}\tOK"))
-        return SendFeedbackResult(status=0, message="Score updated")
+        return SendFeedbackResult(status=0, message="Post is hidden")
     except DBException as exc:
         logging.error(f"Error in database: {exc}")
         return SendFeedbackResult(status=6, message="Error in database")
@@ -280,7 +280,7 @@ def send_recovered(post_id: int, Authorization=Header()):
     try:
         db.hide_generation(result_id, 0)
         logging.info(logging.info(f"/recover\tid={result_id}\tOK"))
-        return SendFeedbackResult(status=0, message="Score updated")
+        return SendFeedbackResult(status=0, message="Post is recovered")
     except DBException as exc:
         logging.error(f"Error in database: {exc}")
         return SendFeedbackResult(status=6, message="Error in database")
@@ -321,7 +321,9 @@ def send_published(post_id: int, Authorization=Header()):
     try:
         db.write_published(result_id)
         logging.info(logging.info(f"/publish\tid={result_id}\tOK"))
-        return SendFeedbackResult(status=0, message="Score updated")
+        return SendFeedbackResult(
+            status=0, message="Post is marked as published"
+        )
     except DBException as exc:
         logging.error(f"Error in database: {exc}")
         return SendFeedbackResult(status=6, message="Error in database")
