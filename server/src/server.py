@@ -66,8 +66,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app = FastAPI()
-
 DESCRIPTION = """
 Выпускной проект ОЦ VK в МГТУ команды Team Rattlesnake. Сервис, генерирующий
 контент для социальной сети ВКонтакте. Посты генерируются сами с помощью
