@@ -8,7 +8,6 @@ services:
       dockerfile: ./Dockerfile
     depends_on:
       - mariadb
-      - redis
     restart: on-failure
     volumes:
       - ./logs:/home/logs
