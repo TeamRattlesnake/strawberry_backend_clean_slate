@@ -3,7 +3,9 @@
 """
 
 import json
-from itertools import cycle
+
+READY = 1
+BUSY = 0
 
 
 class Config:
@@ -30,14 +32,33 @@ class Config:
         self.extend_context_path = data["extend_context_path"]
         self.unmask_context_path = data["unmask_context_path"]
 
-        self.api_tokens = data["api_tokens"]
-        self.tokens_cycle = cycle(self.api_tokens)
+        self.api_tokens = {token: READY for token in data["api_tokens"]}
 
         if len(self.api_tokens) == 0:
             raise Exception("No api tokens in config file")
 
     def next_token(self) -> str:
         """
-        Возвращает токены по кругу. Чем больше токенов в конфиге, тем лучше!
+        Возвращает свободный токен и помечает его как занятый
         """
-        return next(self.tokens_cycle)
+        for token in self.api_tokens:
+            if self.api_tokens[token] == READY:
+                self.api_tokens[token] = BUSY
+                return token
+        return None
+
+    def free_token(self, token: str):
+        """
+        Освобождает токен
+        """
+        if token in self.api_tokens:
+            self.api_tokens[token] = READY
+
+    def ready(self) -> bool:
+        """
+        Возвращает статус
+        """
+        for token in self.api_tokens:
+            if self.api_tokens[token] == READY:
+                return True
+        return False

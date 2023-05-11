@@ -169,7 +169,7 @@ class Database:
 
                 connection.execute(update_query)
         except Exception as exc:
-            raise DBException(f"Error in change_rating: {exc}") from exc
+            raise DBException(f"Error in write_feedback: {exc}") from exc
 
     def hide_generation(self, text_id: int, hidden=1):
         """
@@ -201,7 +201,7 @@ class Database:
 
                 connection.execute(update_query)
         except Exception as exc:
-            raise DBException(f"Error in change_rating: {exc}") from exc
+            raise DBException(f"Error in write_published: {exc}") from exc
 
     def get_users_texts(
         self,
@@ -285,3 +285,19 @@ class Database:
                 return text
         except Exception as exc:
             raise DBException(f"Error in get_value: {exc}") from exc
+
+    def user_owns_post(self, user_id: int, text_id: int) -> bool:
+        """
+        Проверяет, принадлежит ли пост пользователю
+        """
+        try:
+            with self.engine.connect() as connection:
+                select_query = select(self.generated_data.c.user_id).where(
+                    self.generated_data.c.id == text_id
+                )
+                user_id_db = int(
+                    connection.execute(select_query).fetchall()[0][0]
+                )
+                return user_id == user_id_db
+        except Exception as exc:
+            raise DBException(f"Error in user_owns_post: {exc}") from exc

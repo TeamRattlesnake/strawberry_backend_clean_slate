@@ -66,6 +66,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app = FastAPI()
 
 DESCRIPTION = """
 Выпускной проект ОЦ VK в МГТУ команды Team Rattlesnake. Сервис, генерирующий
@@ -93,7 +94,7 @@ def custom_openapi():
         return app.openapi_schema
     openapi_schema = get_openapi(
         title="Strawberry🍓",
-        version="1.5.0 - Предзащита",
+        version="1.6.0 - Clean Slate",
         description=DESCRIPTION,
         routes=app.routes,
         contact={
@@ -122,7 +123,10 @@ def startup():
             logging.info("Creating tables...\tOK")
     except DBException as exc:
         logging.error(f"Error while checking tables: {exc}")
-        raise Exception("Error! Shutting down...") from exc
+        raise Exception("DB Error! Shutting down...") from exc
+    except Exception as exc:
+        logging.error(f"Unknown error: {exc}")
+        raise Exception("Unknown error! Shutting down...") from exc
 
 
 @app.post(
@@ -155,6 +159,9 @@ def send_like(post_id: int, Authorization=Header()):
     logging.info(f"/like\tid={result_id}")
 
     try:
+        if not db.user_owns_post(auth_data["vk_user_id"], result_id):
+            return SendFeedbackResult(status=1, message="Post is not yours")
+
         db.write_feedback(result_id, 1)
         logging.info(logging.info(f"/like\tid={result_id}\tOK"))
         return SendFeedbackResult(status=0, message="Post is liked")
@@ -196,6 +203,9 @@ def send_dislike(post_id: int, Authorization=Header()):
     logging.info(f"/dislike\tid={result_id}")
 
     try:
+        if not db.user_owns_post(auth_data["vk_user_id"], result_id):
+            return SendFeedbackResult(status=1, message="Post is not yours")
+
         db.write_feedback(result_id, -1)
         logging.info(logging.info(f"/dislike\tid={result_id}\tOK"))
         return SendFeedbackResult(status=0, message="Post is disliked")
@@ -237,6 +247,9 @@ def send_hidden(post_id: int, Authorization=Header()):
     logging.info(f"/delete\tid={result_id}")
 
     try:
+        if not db.user_owns_post(auth_data["vk_user_id"], result_id):
+            return SendFeedbackResult(status=1, message="Post is not yours")
+
         db.hide_generation(result_id, 1)
         logging.info(logging.info(f"/delete\tid={result_id}\tOK"))
         return SendFeedbackResult(status=0, message="Post is hidden")
@@ -278,6 +291,9 @@ def send_recovered(post_id: int, Authorization=Header()):
     logging.info(f"/recover\tid={result_id}")
 
     try:
+        if not db.user_owns_post(auth_data["vk_user_id"], result_id):
+            return SendFeedbackResult(status=1, message="Post is not yours")
+
         db.hide_generation(result_id, 0)
         logging.info(logging.info(f"/recover\tid={result_id}\tOK"))
         return SendFeedbackResult(status=0, message="Post is recovered")
@@ -319,6 +335,9 @@ def send_published(post_id: int, Authorization=Header()):
     logging.info(f"/publish\tid={result_id}")
 
     try:
+        if not db.user_owns_post(auth_data["vk_user_id"], result_id):
+            return SendFeedbackResult(status=1, message="Post is not yours")
+
         db.write_published(result_id)
         logging.info(logging.info(f"/publish\tid={result_id}\tOK"))
         return SendFeedbackResult(
@@ -442,8 +461,12 @@ def ask_nn(
         f"/{gen_method}\tlen(texts)={len(texts)}; hint[:20]={hint[:20]}; gen_id={gen_id}"
     )
 
+    token = None
+
     try:
-        api = NNApi(token=config.next_token())
+        token = config.next_token()
+
+        api = NNApi(token=token)
 
         if gen_method == "generate_text":
             api.load_context(config.gen_context_path)
@@ -486,6 +509,9 @@ def ask_nn(
         logging.error(f"Error in database: {exc}")
     except Exception as exc:
         logging.error(f"Unknown error: {exc}")
+        db.add_record_result(gen_id, "", 0, False)
+    finally:
+        config.free_token(token)
 
 
 def process_method(
@@ -550,6 +576,14 @@ def process_method(
         return GenerateID(
             status=6,
             message="Error in database",
+            data=GenerateResultID(text_id=-1),
+        )
+
+    if not config.ready():
+        logging.error(f"Service is not ready. Not enough tokens")
+        return GenerateID(
+            status=7,
+            message="Server is not ready",
             data=GenerateResultID(text_id=-1),
         )
 

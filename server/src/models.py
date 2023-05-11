@@ -58,6 +58,7 @@ class SendFeedbackResult(BaseModel):
     * 4 - unknown error
     * 5 - not implemented
     * 6 - db error
+    * 7 - rate limit exceeded
 
     message - str, текстовое описание статуса. Тут хранится
     текст исключения, если оно произошло
@@ -114,6 +115,7 @@ class GenerateID(BaseModel):
     * 4 - unknown error
     * 5 - not implemented
     * 6 - db error
+    * 7 - rate limit exceeded
 
     message - str, текстовое описание статуса. Тут хранится текст исключения,
     если оно произошло
@@ -141,6 +143,7 @@ class GenerateStatus(BaseModel):
     * 4 - unknown error
     * 5 - not implemented
     * 6 - db error
+    * 7 - rate limit exceeded
 
     message - str, текстовое описание статуса. Тут хранится текст исключения,
     если оно произошло
@@ -167,6 +170,7 @@ class GenerateResult(BaseModel):
     * 4 - unknown error
     * 5 - not implemented
     * 6 - db error
+    * 7 - rate limit exceeded
 
     message - str, текстовое описание статуса. Тут хранится текст исключения,
     если оно произошло
@@ -237,6 +241,7 @@ class UserResults(BaseModel):
     * 4 - unknown error
     * 5 - not implemented
     * 6 - db error
+    * 7 - rate limit exceeded
 
     message - str, текстовое описание статуса. Тут хранится текст
     исключения, если оно произошло
