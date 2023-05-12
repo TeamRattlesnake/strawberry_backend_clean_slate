@@ -45,8 +45,10 @@ class Config:
         Возвращает свободный токен и помечает его как занятый
         """
         while True:
-            token, status = self.api_tokens[next(self.indexes)]
+            ind = next(self.indexes)
+            token, status = self.api_tokens[ind]
             if status == READY:
+                self.api_tokens[ind][1] = BUSY
                 return token
 
     def free_token(self, token: str):
