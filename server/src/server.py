@@ -464,6 +464,8 @@ def ask_nn(
     try:
         token = config.next_token()
 
+        logging.info(f"Got token[:10]: {token[:10]}")
+
         api = NNApi(token=token)
 
         if gen_method == "generate_text":
