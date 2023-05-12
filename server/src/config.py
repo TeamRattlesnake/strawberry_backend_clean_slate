@@ -36,7 +36,7 @@ class Config:
         if len(data["api_tokens"]) == 0:
             raise Exception("No api tokens in config file")
 
-        self.api_tokens = [(token, READY) for token in data["api_tokens"]]
+        self.api_tokens = [[token, READY] for token in data["api_tokens"]]
 
         self.indexes = itertools.cycle(range(len(self.api_tokens)))
 
