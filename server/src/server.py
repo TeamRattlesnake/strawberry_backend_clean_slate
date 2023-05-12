@@ -579,6 +579,7 @@ def process_method(
 
     if not config.ready():
         logging.error(f"Service is not ready. Not enough tokens")
+        db.add_record_result(gen_id, "", 0, False)
         return GenerateID(
             status=7,
             message="Server is not ready",
