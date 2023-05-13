@@ -614,13 +614,14 @@ def generate(
 
     method - GenerationMethod, строка с описанием метода генерации.
     Доступные значения: "generate_text", "append_text", "rephrase_text",
-    "summarize_text", "extend_text", "unmask_text"
+    "summarize_text", "extend_text", "unmask_text", gen_from_scratch
 
     context_data - list[str], список текстов существующих постов
     в паблике (лучше не менее 3-5 непустых текстов )
 
     hint - str, запрос на генерацию контента. Содержит максимально
-    краткую мысль, о чем писать текст
+    краткую мысль, о чем писать текст (для gen_from_scratch
+    можно оставить эту строку пустой)
 
     group_id - int, айди группы, для которой генерируется пост. Нужно
     чтобы связать генерацию с группой и потом выдавать статистику для группы по этому айди
