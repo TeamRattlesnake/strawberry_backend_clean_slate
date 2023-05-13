@@ -480,7 +480,7 @@ def ask_nn(
             api.load_context(config.extend_context_path)
         elif gen_method == "unmask_text":
             api.load_context(config.unmask_context_path)
-       elif gen_method == "gen_from_scratch":
+        elif gen_method == "gen_from_scratch":
             api.load_context(config.gen_from_scratch_context_path)
 
         texts = [prepare_string(replace_stop_words(text)) for text in texts]

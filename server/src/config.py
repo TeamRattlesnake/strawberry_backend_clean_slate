@@ -27,7 +27,9 @@ class Config:
         self.db_name = data["db_name"]
 
         self.gen_context_path = data["gen_context_path"]
-        self.gen_from_scratch_context_path = data["gen_from_scratch_context_path"]
+        self.gen_from_scratch_context_path = data[
+            "gen_from_scratch_context_path"
+        ]
         self.append_context_path = data["append_context_path"]
         self.rephrase_context_path = data["rephrase_context_path"]
         self.summarize_context_path = data["summarize_context_path"]
