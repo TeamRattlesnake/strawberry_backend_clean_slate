@@ -17,6 +17,7 @@ class GenerationMethod(str, Enum):
     SUMMARIZE = "summarize_text"
     EXTEND = "extend_text"
     UNMASK = "unmask_text"
+    GENERATE_FROM_SCRATCH = "gen_from_scratch"
 
 
 class GenerateQueryModel(BaseModel):
@@ -26,7 +27,7 @@ class GenerateQueryModel(BaseModel):
 
     method - GenerationMethod, строка с описанием метода генерации.
     Доступныезначения: "generate_text", "append_text", "rephrase_text",
-    "summarize_text", "extend_text", "unmask_text"
+    "summarize_text", "extend_text", "unmask_text", "gen_from_scratch"
 
     context_data - list[str], список текстов существующих
     постов в паблике (лучше не менее 3-5 непустых текстов )
