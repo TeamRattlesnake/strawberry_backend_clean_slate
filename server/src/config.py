@@ -50,7 +50,7 @@ class Config:
         self.acquired += 1
         return next(self.api_tokens)
 
-    def free_token(self, token: str):
+    def free(self):
         """
         Освобождает токен
         """
