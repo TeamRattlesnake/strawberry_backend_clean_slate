@@ -678,6 +678,13 @@ def get_status(text_id, Authorization=Header()):
         )
 
     try:
+        if not db.user_owns_post(auth_data["vk_user_id"], text_id):
+            return GenerateResultStatus(
+                status=1,
+                message="Post is not yours",
+                data=GenerateResultStatus(text_status=-1),
+            )
+
         status = db.get_status(text_id)
         logging.info(f"/get_gen_status\ttext_id={text_id}\tOK")
         return GenerateStatus(
@@ -733,6 +740,13 @@ def get_result(text_id, Authorization=Header()):
         )
 
     try:
+        if not db.user_owns_post(auth_data["vk_user_id"], text_id):
+            return GenerateResult(
+                status=1,
+                message="Post is not yours",
+                data=GenerateResultData(text_data=""),
+            )
+
         result = db.get_value(text_id)
         logging.info(f"/get_gen_result\ttext_id={text_id}\tOK")
         return GenerateResult(
