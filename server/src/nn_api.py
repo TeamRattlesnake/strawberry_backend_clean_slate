@@ -48,11 +48,6 @@ class NNApi:
         """
         try:
 
-            if len(hint) == 0:
-                raise NNException(
-                    "Error in prepare_query: the hint is empty, cannot generate without hint (or can I?)"
-                )
-
             if len(hint) >= MAX_WORDS_LEN:
                 raise NNException(
                     "Error in prepare_query: the request is too long (hint alone is larger than allowed input in model)"

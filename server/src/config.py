@@ -39,34 +39,27 @@ class Config:
         if len(data["api_tokens"]) == 0:
             raise Exception("No api tokens in config file")
 
-        self.api_tokens = [[token, READY] for token in data["api_tokens"]]
-
-        self.indexes = itertools.cycle(range(len(self.api_tokens)))
+        self.api_tokens = itertools.cycle(data["api_tokens"])
+        self.acquired = 0
+        self.available_count = len(data["api_tokens"])
 
     def next_token(self) -> str:
         """
         Возвращает свободный токен и помечает его как занятый
         """
-        while True:
-            ind = next(self.indexes)
-            token, status = self.api_tokens[ind]
-            if status == READY:
-                self.api_tokens[ind][1] = BUSY
-                return token
+        self.acquired += 1
+        return next(self.api_tokens)
 
     def free_token(self, token: str):
         """
         Освобождает токен
         """
-        for i, _ in enumerate(self.api_tokens):
-            if self.api_tokens[i][0] == token:
-                self.api_tokens[i][1] = READY
+        self.acquired -= 1
 
     def ready(self) -> bool:
         """
         Возвращает статус
         """
-        for _, status in self.api_tokens:
-            if status == READY:
-                return True
+        if self.acquired < self.available_count:
+            return True
         return False
