@@ -563,6 +563,7 @@ def process_method(
         group_id = data.group_id
         time_now = int(time.time())
     except KeyError as exc:
+        logging.error(f"Key error. Check the header: {exc}")
         return GenerateID(
             status=4,
             message="Key error. Check the header",
@@ -587,7 +588,7 @@ def process_method(
         )
 
     if not config.ready():
-        logging.error(f"Service is not ready. Not enough tokens")
+        logging.error("Service is not ready. Not enough tokens")
         db.add_record_result(gen_id, "", 0, False)
         return GenerateID(
             status=7,

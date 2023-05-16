@@ -45,14 +45,14 @@ class Config:
 
     def next_token(self) -> str:
         """
-        Возвращает свободный токен и помечает его как занятый
+        Возвращает свободный токен и увеличивает счетчик
         """
         self.acquired += 1
         return next(self.api_tokens)
 
     def free(self):
         """
-        Освобождает токен
+        Освобождает токен - уменьшает счетчик
         """
         self.acquired -= 1
 
