@@ -5,6 +5,8 @@ from enum import Enum
 
 from pydantic import BaseModel
 
+from fastapi import File, UploadFile
+
 
 class GenerationMethod(str, Enum):
     """
@@ -256,3 +258,36 @@ class UserResults(BaseModel):
     message: str
     data: list[GenerateResultInfo]
     count: int
+
+
+class UploadFileModel(BaseModel):
+    """
+    Модель с данными для загрузки файла на сервер ВК
+    """
+
+    file: UploadFile
+    token: str
+    group_id: int
+
+
+class UploadFileResult(BaseModel):
+    """
+    Модель с результатами загрузки файла на сервер ВК
+
+    status - int, статус операции:
+    * 0 - OK
+    * 1 - VK API Auth error
+    * 2 - NN API error
+    * 3 - request error
+    * 4 - unknown error
+    * 5 - not implemented
+    * 6 - db error
+    * 7 - rate limit exceeded
+
+    message - str, текстовое описание статуса. Тут хранится текст
+    исключения, если оно произошло
+    """
+
+    status: int
+    message: str
+    file_url: str

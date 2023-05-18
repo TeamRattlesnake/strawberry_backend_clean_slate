@@ -5,9 +5,11 @@
 import logging
 import time
 
-from fastapi import BackgroundTasks, FastAPI, Header
+from fastapi import BackgroundTasks, FastAPI, Header, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
+
+import requests
 
 from models import (
     GenerateQueryModel,
@@ -19,6 +21,8 @@ from models import (
     GenerateStatus,
     GenerateResult,
     UserResults,
+    UploadFileModel,
+    UploadFileResult,
 )
 from config import Config
 from database import Database, DBException
@@ -762,3 +766,74 @@ def get_result(text_id, Authorization=Header()):
             message="Error in database",
             data=GenerateResultData(text_data=""),
         )
+
+
+@app.post(
+    "/api/v1/files/upload",
+    response_model=UploadFileResult,
+    tags=["Файлы"],
+)
+def upload_file(
+    data: UploadFileModel,
+    Authorization=Header(),
+):
+    logging.info(f"/upload")
+    try:
+        auth_data = parse_query_string(Authorization)
+        if not is_valid(query=auth_data, secret=config.client_secret):
+            return UploadFileResult(
+                status=1,
+                message="Authorization error",
+                file_url="",
+            )
+    except UtilsException as exc:
+        logging.error(
+            f"Error in utils, probably the request was not correct: {exc}"
+        )
+        return UploadFileResult(
+            status=3,
+            message="Authorization error",
+            file_url="",
+        )
+    except Exception as exc:
+        logging.error(f"Unknown error: {exc}")
+        return UploadFileResult(
+            status=4,
+            message="Unknown error",
+            file_url="",
+        )
+    logging.info(f"/upload\tOK")
+
+    file = data.file.file
+    content_type = data.file.content_type
+    filename = data.file.filename
+    token = data.token
+    group_id = data.group_id
+
+    logging.info(f"{content_type}, {filename}, {token}, {group_id}")
+
+    if content_type in ["image/png", "image/jpeg", "image/gif"]:
+        response = requests.get(
+            "https://api.vk.com/method/photos.getWallUploadServer",
+            params={"group_id": group_id, "acces_token": token},
+        )
+        logging.info(f"GET SERVER\nresponse.json()")
+        upload_url = response.json()["upload_url"]
+        response = requests.post(upload_url, files={"photo": file})
+        logging.info(f"UPLOAD\nresponse.json()")
+        server = response.json()["server"]
+        photo = response.json()["photo"]
+        hash = response.json()["hash"]
+        response = requests.post(
+            "https://api.vk.com/method/photos.saveWallPhoto",
+            params={"acces_token": token, "server": server, "hash": hash},
+            files={"photo": photo},
+        )
+        logging.info(f"SAVE\nresponse.json()")
+        url = response.json()["response"][0]["sizes"][-1]["url"]
+
+    return UploadFileResult(
+        status=4,
+        message="Unknown error",
+        file_url=url,
+    )
