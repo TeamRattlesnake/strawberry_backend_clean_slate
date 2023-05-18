@@ -5,7 +5,7 @@
 import logging
 import time
 
-from fastapi import BackgroundTasks, FastAPI, Header, File, UploadFile
+from fastapi import BackgroundTasks, FastAPI, Header, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
@@ -774,10 +774,18 @@ def get_result(text_id, Authorization=Header()):
     tags=["Файлы"],
 )
 def upload_file(
+    file: UploadFile,
     data: UploadFileModel,
     Authorization=Header(),
+
 ):
-    logging.info(f"/upload")
+    """
+    Метод для загрузки файла на сервер ВКонтакте
+
+    token - str, токен
+    group_id - int, айди группы
+    """
+    logging.info("/upload")
     try:
         auth_data = parse_query_string(Authorization)
         if not is_valid(query=auth_data, secret=config.client_secret):
@@ -802,11 +810,11 @@ def upload_file(
             message="Unknown error",
             file_url="",
         )
-    logging.info(f"/upload\tOK")
+    logging.info("/upload\tOK")
 
-    file = data.file.file
-    content_type = data.file.content_type
-    filename = data.file.filename
+    file = file.file
+    content_type = file.content_type
+    filename = file.filename
     token = data.token
     group_id = data.group_id
 
@@ -817,10 +825,10 @@ def upload_file(
             "https://api.vk.com/method/photos.getWallUploadServer",
             params={"group_id": group_id, "acces_token": token},
         )
-        logging.info(f"GET SERVER\nresponse.json()")
+        logging.info(f"GET SERVER\n{response.json()}")
         upload_url = response.json()["upload_url"]
         response = requests.post(upload_url, files={"photo": file})
-        logging.info(f"UPLOAD\nresponse.json()")
+        logging.info(f"UPLOAD\n{response.json()}")
         server = response.json()["server"]
         photo = response.json()["photo"]
         hash = response.json()["hash"]
@@ -829,7 +837,7 @@ def upload_file(
             params={"acces_token": token, "server": server, "hash": hash},
             files={"photo": photo},
         )
-        logging.info(f"SAVE\nresponse.json()")
+        logging.info(f"SAVE\n{response.json()}")
         url = response.json()["response"][0]["sizes"][-1]["url"]
 
     return UploadFileResult(

@@ -5,8 +5,6 @@ from enum import Enum
 
 from pydantic import BaseModel
 
-from fastapi import File, UploadFile
-
 
 class GenerationMethod(str, Enum):
     """
@@ -263,9 +261,10 @@ class UserResults(BaseModel):
 class UploadFileModel(BaseModel):
     """
     Модель с данными для загрузки файла на сервер ВК
-    """
 
-    file: UploadFile
+    token - str, токен
+    group_id - int, айди группы
+    """
     token: str
     group_id: int
 
