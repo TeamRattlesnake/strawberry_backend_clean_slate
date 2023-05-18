@@ -265,6 +265,7 @@ class UploadFileModel(BaseModel):
     token - str, токен
     group_id - int, айди группы
     """
+
     token: str
     group_id: int
 

@@ -777,7 +777,6 @@ def upload_file(
     file: UploadFile,
     data: UploadFileModel,
     Authorization=Header(),
-
 ):
     """
     Метод для загрузки файла на сервер ВКонтакте
@@ -812,7 +811,7 @@ def upload_file(
         )
     logging.info("/upload\tOK")
 
-    file = file.file
+    file_data = file.file
     content_type = file.content_type
     filename = file.filename
     token = data.token
@@ -827,7 +826,7 @@ def upload_file(
         )
         logging.info(f"GET SERVER\n{response.json()}")
         upload_url = response.json()["upload_url"]
-        response = requests.post(upload_url, files={"photo": file})
+        response = requests.post(upload_url, files={"photo": file_data})
         logging.info(f"UPLOAD\n{response.json()}")
         server = response.json()["server"]
         photo = response.json()["photo"]
@@ -839,9 +838,36 @@ def upload_file(
         )
         logging.info(f"SAVE\n{response.json()}")
         url = response.json()["response"][0]["sizes"][-1]["url"]
+        return UploadFileResult(
+            status=0,
+            message="Photo is uploaded",
+            file_url=url,
+        )
+    else:
+        response = requests.get(
+            "https://api.vk.com/method/docs.getWallUploadServer",
+            params={"group_id": group_id, "acces_token": token},
+        )
+        logging.info(f"GET SERVER\n{response.json()}")
+        upload_url = response.json()["upload_url"]
+        response = requests.post(upload_url, files={"file": file_data})
+        logging.info(f"UPLOAD\n{response.json()}")
+        file_response = response.json()["file"]
+        response = requests.post(
+            "https://api.vk.com/method/docs.save",
+            params={"acces_token": token},
+            files={"file": file_response},
+        )
+        logging.info(f"SAVE\n{response.json()}")
+        url = response.json()["response"]["doc"]["url"]
+        return UploadFileResult(
+            status=0,
+            message="File is uploaded",
+            file_url=url,
+        )
 
     return UploadFileResult(
         status=4,
         message="Unknown error",
-        file_url=url,
+        file_url="",
     )
