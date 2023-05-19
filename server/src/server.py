@@ -809,7 +809,6 @@ def upload_file(
             message="Unknown error",
             file_url="",
         )
-    logging.info("/upload\tOK")
 
     file_data = file.file
     content_type = file.content_type
@@ -819,44 +818,58 @@ def upload_file(
 
     logging.info(f"{content_type}, {filename}, {token}, {group_id}")
 
-    if content_type in ["image/png", "image/jpeg", "image/gif"]:
-        response = requests.get(
-            "https://api.vk.com/method/photos.getWallUploadServer",
-            params={"group_id": group_id, "acces_token": token},
-        )
-        logging.info(f"GET SERVER\n{response.json()}")
-        upload_url = response.json()["upload_url"]
-        response = requests.post(upload_url, files={"photo": file_data})
-        logging.info(f"UPLOAD\n{response.json()}")
-        server = response.json()["server"]
-        photo = response.json()["photo"]
-        hash = response.json()["hash"]
-        response = requests.post(
-            "https://api.vk.com/method/photos.saveWallPhoto",
-            params={"acces_token": token, "server": server, "hash": hash},
-            files={"photo": photo},
-        )
-        logging.info(f"SAVE\n{response.json()}")
-        url = response.json()["response"][0]["sizes"][-1]["url"]
-        return UploadFileResult(
-            status=0,
-            message="Photo is uploaded",
-            file_url=url,
-        )
-    else:
+    try:
+        if content_type in ["image/png", "image/jpeg", "image/gif"]:
+            response = requests.get(
+                "https://api.vk.com/method/photos.getWallUploadServer",
+                params={"group_id": group_id, "access_token": token},
+                timeout=5,
+            )
+            logging.info(f"GET SERVER\n{response.json()}")
+            upload_url = response.json()["upload_url"]
+            response = requests.post(
+                upload_url, files={"photo": file_data}, timeout=5
+            )
+            logging.info(f"UPLOAD\n{response.json()}")
+            server = response.json()["server"]
+            photo = response.json()["photo"]
+            hash_ = response.json()["hash"]
+            response = requests.post(
+                "https://api.vk.com/method/photos.saveWallPhoto",
+                params={"access_token": token, "server": server, "hash": hash_},
+                files={"photo": photo},
+                timeout=5,
+            )
+            logging.info(f"SAVE\n{response.json()}")
+            sizes = response.json()["response"][0]["sizes"]
+            needed_size_ind = 0
+            for i, _ in enumerate(sizes):
+                if sizes[i]["height"] > sizes[needed_size_ind]["height"]:
+                    needed_size_ind = i
+            url = sizes[needed_size_ind]["url"]
+            return UploadFileResult(
+                status=0,
+                message="Photo is uploaded",
+                file_url=url,
+            )
+
         response = requests.get(
             "https://api.vk.com/method/docs.getWallUploadServer",
-            params={"group_id": group_id, "acces_token": token},
+            params={"group_id": group_id, "access_token": token},
+            timeout=5,
         )
         logging.info(f"GET SERVER\n{response.json()}")
         upload_url = response.json()["upload_url"]
-        response = requests.post(upload_url, files={"file": file_data})
+        response = requests.post(
+            upload_url, files={"file": file_data}, timeout=5
+        )
         logging.info(f"UPLOAD\n{response.json()}")
         file_response = response.json()["file"]
         response = requests.post(
             "https://api.vk.com/method/docs.save",
-            params={"acces_token": token},
+            params={"access_token": token},
             files={"file": file_response},
+            timeout=5,
         )
         logging.info(f"SAVE\n{response.json()}")
         url = response.json()["response"]["doc"]["url"]
@@ -866,8 +879,10 @@ def upload_file(
             file_url=url,
         )
 
-    return UploadFileResult(
-        status=4,
-        message="Unknown error",
-        file_url="",
-    )
+    except Exception as exc:
+        logging.info(f"Error in /upload: {exc}")
+        return UploadFileResult(
+            status=4,
+            message="Unknown error",
+            file_url="",
+        )
