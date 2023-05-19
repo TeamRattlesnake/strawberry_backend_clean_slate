@@ -4,7 +4,6 @@
 
 import logging
 import time
-import re
 
 from typing import Annotated
 
@@ -773,14 +772,6 @@ def upload_file(
                 upload_result="",
             )
 
-        pattern = re.compile("*vk.com*")
-        if not pattern.match(upload_url):
-            return UploadFileResult(
-                status=1,
-                message="Authorization error",
-                upload_result="",
-            )
-
     except UtilsException as exc:
         logging.error(f"Error in utils, probably the request was not correct: {exc}")
         return UploadFileResult(
@@ -795,8 +786,6 @@ def upload_file(
             message="Unknown error",
             upload_result="",
         )
-
-
 
     try:
         if file.content_type in ["image/png", "image/jpeg", "image/gif"]:
