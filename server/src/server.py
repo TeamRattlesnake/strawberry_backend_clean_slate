@@ -773,7 +773,7 @@ def upload_file(
                 upload_result="",
             )
 
-        pattern = re.compile("https://*.vk.com/*")
+        pattern = re.compile("*vk.com*")
         if not pattern.match(upload_url):
             return UploadFileResult(
                 status=1,
