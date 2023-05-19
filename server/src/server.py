@@ -796,6 +796,8 @@ def upload_file(
         else:
             response = requests.post(upload_url, files={"file": file_data}, timeout=5)
 
+         logging.info(response.text)
+
         logging.info(f"/upload {content_type}, {filename}\tOK")
 
         return UploadFileResult(
