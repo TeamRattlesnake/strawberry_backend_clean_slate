@@ -792,13 +792,13 @@ def upload_file(
             response = requests.post(
                 upload_url,
                 files={"photo": (file.filename, file.file, file.content_type)},
-                timeout=5,
+                timeout=30,
             )
         else:
             response = requests.post(
                 upload_url,
                 files={"file": (file.filename, file.file, file.content_type)},
-                timeout=5,
+                timeout=30,
             )
 
         logging.info(f"/upload {file.content_type}, {file.filename}\tOK")
