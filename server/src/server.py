@@ -773,21 +773,21 @@ def upload_file(
             return UploadFileResult(
                 status=1,
                 message="Authorization error",
-                file_url="",
+                upload_result="",
             )
     except UtilsException as exc:
         logging.error(f"Error in utils, probably the request was not correct: {exc}")
         return UploadFileResult(
             status=3,
             message="Authorization error",
-            file_url="",
+            upload_result="",
         )
     except Exception as exc:
         logging.error(f"Unknown error: {exc}")
         return UploadFileResult(
             status=4,
             message="Unknown error",
-            file_url="",
+            upload_result="",
         )
 
     try:
@@ -809,5 +809,5 @@ def upload_file(
         return UploadFileResult(
             status=4,
             message="Unknown error",
-            file_url="",
+            upload_result="",
         )
