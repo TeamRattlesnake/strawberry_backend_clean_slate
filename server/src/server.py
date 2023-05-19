@@ -7,7 +7,7 @@ import time
 
 from typing import Annotated
 
-from fastapi import BackgroundTasks, FastAPI, Header, UploadFile, Form
+from fastapi import BackgroundTasks, FastAPI, Header, UploadFile, Form, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
@@ -788,9 +788,9 @@ def upload_file(
 
     try:
         if file.content_type in ["image/png", "image/jpeg", "image/gif"]:
-            response = requests.post(upload_url, files={"photo": file}, timeout=5)
+            response = requests.post(upload_url, files={"photo": File(file)}, timeout=5)
         else:
-            response = requests.post(upload_url, files={"file": file}, timeout=5)
+            response = requests.post(upload_url, files={"file": File(file)}, timeout=5)
 
         logging.info(response.text)
 
