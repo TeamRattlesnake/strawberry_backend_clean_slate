@@ -258,18 +258,6 @@ class UserResults(BaseModel):
     count: int
 
 
-class UploadFileModel(BaseModel):
-    """
-    Модель с данными для загрузки файла на сервер ВК
-
-    token - str, токен
-    group_id - int, айди группы
-    """
-
-    token: str
-    group_id: int
-
-
 class UploadFileResult(BaseModel):
     """
     Модель с результатами загрузки файла на сервер ВК

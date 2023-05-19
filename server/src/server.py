@@ -5,7 +5,9 @@
 import logging
 import time
 
-from fastapi import BackgroundTasks, FastAPI, Header, UploadFile
+from typing import Annotated
+
+from fastapi import BackgroundTasks, FastAPI, Header, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
@@ -21,7 +23,6 @@ from models import (
     GenerateStatus,
     GenerateResult,
     UserResults,
-    UploadFileModel,
     UploadFileResult,
 )
 from config import Config
@@ -774,8 +775,9 @@ def get_result(text_id, Authorization=Header()):
     tags=["Файлы"],
 )
 def upload_file(
+    token: Annotated[str, Form()],
+    group_id: Annotated[int, Form()],
     file: UploadFile,
-    data: UploadFileModel,
     Authorization=Header(),
 ):
     """
@@ -813,8 +815,6 @@ def upload_file(
     file_data = file.file
     content_type = file.content_type
     filename = file.filename
-    token = data.token
-    group_id = data.group_id
 
     logging.info(f"{content_type}, {filename}, {token}, {group_id}")
 
