@@ -788,9 +788,9 @@ def upload_file(
 
     try:
         if file.content_type in ["image/png", "image/jpeg", "image/gif"]:
-            response = requests.post(upload_url, files={"photo": File(file)}, timeout=5)
+            response = requests.post(upload_url, files={"photo": bytes(file)}, timeout=5)
         else:
-            response = requests.post(upload_url, files={"file": File(file)}, timeout=5)
+            response = requests.post(upload_url, files={"file": bytes(file)}, timeout=5)
 
         logging.info(response.text)
 
