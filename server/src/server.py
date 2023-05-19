@@ -762,11 +762,7 @@ def upload_file(
     group_id - int, айди группы
     """
 
-    file_data = file.file
-    content_type = file.content_type
-    filename = file.filename
-
-    logging.info(f"/upload {content_type}, {filename}")
+    logging.info(f"/upload {file.content_type}, {file.filename}")
     try:
         auth_data = parse_query_string(Authorization)
         if not is_valid(query=auth_data, secret=config.client_secret):
@@ -792,13 +788,13 @@ def upload_file(
 
     try:
         if content_type in ["image/png", "image/jpeg", "image/gif"]:
-            response = requests.post(upload_url, files={"photo": file_data}, timeout=5)
+            response = requests.post(upload_url, files={"photo": file}, timeout=5)
         else:
-            response = requests.post(upload_url, files={"file": file_data}, timeout=5)
+            response = requests.post(upload_url, files={"file": file}, timeout=5)
 
          logging.info(response.text)
 
-        logging.info(f"/upload {content_type}, {filename}\tOK")
+        logging.info(f"/upload {file.content_type}, {file.filename}\tOK")
 
         return UploadFileResult(
             status=0,
