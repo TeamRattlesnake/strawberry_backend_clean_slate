@@ -800,8 +800,6 @@ def upload_file(
                 timeout=5,
             )
 
-        logging.info(response.text)
-
         logging.info(f"/upload {file.content_type}, {file.filename}\tOK")
 
         return UploadFileResult(
