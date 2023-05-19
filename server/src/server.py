@@ -149,9 +149,7 @@ def send_like(post_id: int, Authorization=Header()):
         if not is_valid(query=auth_data, secret=config.client_secret):
             return SendFeedbackResult(status=1, message="Authorization error")
     except UtilsException as exc:
-        logging.error(
-            f"Error in utils, probably the request was not correct: {exc}"
-        )
+        logging.error(f"Error in utils, probably the request was not correct: {exc}")
         return SendFeedbackResult(
             status=3,
             message="Error in utils, probably the request was not correct",
@@ -193,9 +191,7 @@ def send_dislike(post_id: int, Authorization=Header()):
         if not is_valid(query=auth_data, secret=config.client_secret):
             return SendFeedbackResult(status=1, message="Authorization error")
     except UtilsException as exc:
-        logging.error(
-            f"Error in utils, probably the request was not correct: {exc}"
-        )
+        logging.error(f"Error in utils, probably the request was not correct: {exc}")
         return SendFeedbackResult(
             status=3,
             message="Error in utils, probably the request was not correct",
@@ -237,9 +233,7 @@ def send_hidden(post_id: int, Authorization=Header()):
         if not is_valid(query=auth_data, secret=config.client_secret):
             return SendFeedbackResult(status=1, message="Authorization error")
     except UtilsException as exc:
-        logging.error(
-            f"Error in utils, probably the request was not correct: {exc}"
-        )
+        logging.error(f"Error in utils, probably the request was not correct: {exc}")
         return SendFeedbackResult(
             status=3,
             message="Error in utils, probably the request was not correct",
@@ -281,9 +275,7 @@ def send_recovered(post_id: int, Authorization=Header()):
         if not is_valid(query=auth_data, secret=config.client_secret):
             return SendFeedbackResult(status=1, message="Authorization error")
     except UtilsException as exc:
-        logging.error(
-            f"Error in utils, probably the request was not correct: {exc}"
-        )
+        logging.error(f"Error in utils, probably the request was not correct: {exc}")
         return SendFeedbackResult(
             status=3,
             message="Error in utils, probably the request was not correct",
@@ -325,9 +317,7 @@ def send_published(post_id: int, Authorization=Header()):
         if not is_valid(query=auth_data, secret=config.client_secret):
             return SendFeedbackResult(status=1, message="Authorization error")
     except UtilsException as exc:
-        logging.error(
-            f"Error in utils, probably the request was not correct: {exc}"
-        )
+        logging.error(f"Error in utils, probably the request was not correct: {exc}")
         return SendFeedbackResult(
             status=3,
             message="Error in utils, probably the request was not correct",
@@ -343,9 +333,7 @@ def send_published(post_id: int, Authorization=Header()):
 
         db.write_published(result_id)
         logging.info(logging.info(f"/publish\tid={result_id}\tOK"))
-        return SendFeedbackResult(
-            status=0, message="Post is marked as published"
-        )
+        return SendFeedbackResult(status=0, message="Post is marked as published")
     except DBException as exc:
         logging.error(f"Error in database: {exc}")
         return SendFeedbackResult(status=6, message="Error in database")
@@ -387,9 +375,7 @@ def get_history(
                 count=0,
             )
     except UtilsException as exc:
-        logging.error(
-            f"Error in utils, probably the request was not correct: {exc}"
-        )
+        logging.error(f"Error in utils, probably the request was not correct: {exc}")
         return UserResults(
             status=3,
             message="Authorization error",
@@ -429,9 +415,7 @@ def get_history(
         )
 
     except DBException as exc:
-        logging.error(
-            f"Error in database while fetching user results text: {exc}"
-        )
+        logging.error(f"Error in database while fetching user results text: {exc}")
         return UserResults(
             status=6,
             message="Error in database while fetching user results text",
@@ -489,9 +473,7 @@ def ask_nn(
             api.load_context(config.gen_from_scratch_context_path)
 
         if (gen_method != "gen_from_scratch") and (hint == ""):
-            raise NNException(
-                "Hint cannot be empty (unless it is gen_from_scratch)"
-            )
+            raise NNException("Hint cannot be empty (unless it is gen_from_scratch)")
 
         texts = [prepare_string(replace_stop_words(text)) for text in texts]
         hint = prepare_string(replace_stop_words(hint))
@@ -544,9 +526,7 @@ def process_method(
                 data=GenerateResultID(text_id=-1),
             )
     except UtilsException as exc:
-        logging.error(
-            f"Error in utils, probably the request was not correct: {exc}"
-        )
+        logging.error(f"Error in utils, probably the request was not correct: {exc}")
         return GenerateID(
             status=3,
             message="Authorization error",
@@ -667,9 +647,7 @@ def get_status(text_id, Authorization=Header()):
                 data=GenerateResultStatus(text_status=-1),
             )
     except UtilsException as exc:
-        logging.error(
-            f"Error in utils, probably the request was not correct: {exc}"
-        )
+        logging.error(f"Error in utils, probably the request was not correct: {exc}")
         return GenerateStatus(
             status=3,
             message="Authorization error",
@@ -729,9 +707,7 @@ def get_result(text_id, Authorization=Header()):
                 data=GenerateResultStatus(text_status=-1),
             )
     except UtilsException as exc:
-        logging.error(
-            f"Error in utils, probably the request was not correct: {exc}"
-        )
+        logging.error(f"Error in utils, probably the request was not correct: {exc}")
         return GenerateResult(
             status=3,
             message="Authorization error",
@@ -775,8 +751,7 @@ def get_result(text_id, Authorization=Header()):
     tags=["Файлы"],
 )
 def upload_file(
-    token: Annotated[str, Form()],
-    group_id: Annotated[int, Form()],
+    upload_url: Annotated[str, Form()],
     file: UploadFile,
     Authorization=Header(),
 ):
@@ -786,7 +761,12 @@ def upload_file(
     token - str, токен
     group_id - int, айди группы
     """
-    logging.info("/upload")
+
+    file_data = file.file
+    content_type = file.content_type
+    filename = file.filename
+
+    logging.info(f"/upload {content_type}, {filename}")
     try:
         auth_data = parse_query_string(Authorization)
         if not is_valid(query=auth_data, secret=config.client_secret):
@@ -796,9 +776,7 @@ def upload_file(
                 file_url="",
             )
     except UtilsException as exc:
-        logging.error(
-            f"Error in utils, probably the request was not correct: {exc}"
-        )
+        logging.error(f"Error in utils, probably the request was not correct: {exc}")
         return UploadFileResult(
             status=3,
             message="Authorization error",
@@ -812,71 +790,18 @@ def upload_file(
             file_url="",
         )
 
-    file_data = file.file
-    content_type = file.content_type
-    filename = file.filename
-
-    logging.info(f"{content_type}, {filename}, {token}, {group_id}")
-
     try:
         if content_type in ["image/png", "image/jpeg", "image/gif"]:
-            response = requests.get(
-                "https://api.vk.com/method/photos.getWallUploadServer",
-                params={"group_id": group_id, "access_token": token},
-                timeout=5,
-            )
-            logging.info(f"GET SERVER\n{response.json()}")
-            upload_url = response.json()["upload_url"]
-            response = requests.post(
-                upload_url, files={"photo": file_data}, timeout=5
-            )
-            logging.info(f"UPLOAD\n{response.json()}")
-            server = response.json()["server"]
-            photo = response.json()["photo"]
-            hash_ = response.json()["hash"]
-            response = requests.post(
-                "https://api.vk.com/method/photos.saveWallPhoto",
-                params={"access_token": token, "server": server, "hash": hash_},
-                files={"photo": photo},
-                timeout=5,
-            )
-            logging.info(f"SAVE\n{response.json()}")
-            sizes = response.json()["response"][0]["sizes"]
-            needed_size_ind = 0
-            for i, _ in enumerate(sizes):
-                if sizes[i]["height"] > sizes[needed_size_ind]["height"]:
-                    needed_size_ind = i
-            url = sizes[needed_size_ind]["url"]
-            return UploadFileResult(
-                status=0,
-                message="Photo is uploaded",
-                file_url=url,
-            )
+            response = requests.post(upload_url, files={"photo": file_data}, timeout=5)
+        else:
+            response = requests.post(upload_url, files={"file": file_data}, timeout=5)
 
-        response = requests.get(
-            "https://api.vk.com/method/docs.getWallUploadServer",
-            params={"group_id": group_id, "access_token": token},
-            timeout=5,
-        )
-        logging.info(f"GET SERVER\n{response.json()}")
-        upload_url = response.json()["upload_url"]
-        response = requests.post(
-            upload_url, files={"file": file_data}, timeout=5
-        )
-        logging.info(f"UPLOAD\n{response.json()}")
-        file_response = response.json()["file"]
-        response = requests.post(
-            "https://api.vk.com/method/docs.save",
-            params={"access_token": token},
-            files={"file": file_response},
-            timeout=5,
-        )
-        logging.info(f"SAVE\n{response.json()}")
-        url = response.json()["response"]["doc"]["url"]
+        logging.info(f"/upload {content_type}, {filename}\tOK")
+
         return UploadFileResult(
             status=0,
             message="File is uploaded",
-            file_url=url,
+            upload_result=response.text,
         )
 
     except Exception as exc:

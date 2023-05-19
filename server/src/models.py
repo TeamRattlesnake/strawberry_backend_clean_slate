@@ -278,4 +278,4 @@ class UploadFileResult(BaseModel):
 
     status: int
     message: str
-    file_url: str
+    upload_result: str

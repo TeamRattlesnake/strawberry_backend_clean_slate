@@ -263,9 +263,7 @@ class Database:
                 get_status_query = select(self.generated_data.c.status).where(
                     self.generated_data.c.id == text_id
                 )
-                status = int(
-                    connection.execute(get_status_query).fetchall()[0][0]
-                )
+                status = int(connection.execute(get_status_query).fetchall()[0][0])
 
                 return status
         except Exception as exc:
@@ -295,9 +293,7 @@ class Database:
                 select_query = select(self.generated_data.c.user_id).where(
                     self.generated_data.c.id == text_id
                 )
-                user_id_db = int(
-                    connection.execute(select_query).fetchall()[0][0]
-                )
+                user_id_db = int(connection.execute(select_query).fetchall()[0][0])
                 return user_id == user_id_db
         except Exception as exc:
             raise DBException(f"Error in user_owns_post: {exc}") from exc

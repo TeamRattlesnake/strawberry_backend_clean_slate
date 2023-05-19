@@ -61,10 +61,7 @@ class NNApi:
                 # Считаю не количество слов, а количество букв потому что
                 # токенизатор не любит русский
                 if (
-                    len(source_texts_string)
-                    + len(text)
-                    + len(hint)
-                    + len(self.context)
+                    len(source_texts_string) + len(text) + len(hint) + len(self.context)
                 ) >= MAX_WORDS_LEN:
                     continue
                 source_texts_string += f"Пост {i}: {text}\n\n"
