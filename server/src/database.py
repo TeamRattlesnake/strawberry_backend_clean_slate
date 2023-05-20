@@ -215,17 +215,25 @@ class Database:
             with self.engine.connect() as connection:
 
                 if group_id:
-                    select_query = select(self.generated_data).where(
-                        (self.generated_data.c.user_id == user_id)
-                        & (self.generated_data.c.group_id == group_id)
-                        & (self.generated_data.c.status == 1)
-                        & (self.generated_data.c.hidden == 0)
+                    select_query = (
+                        select(self.generated_data)
+                        .where(
+                            (self.generated_data.c.user_id == user_id)
+                            & (self.generated_data.c.group_id == group_id)
+                            & (self.generated_data.c.status == 1)
+                            & (self.generated_data.c.hidden == 0)
+                        )
+                        .order_by(self.generated_data.c.id.desc())
                     )
                 else:
-                    select_query = select(self.generated_data).where(
-                        (self.generated_data.c.user_id == user_id)
-                        & (self.generated_data.c.status == 1)
-                        & (self.generated_data.c.hidden == 0)
+                    select_query = (
+                        select(self.generated_data)
+                        .where(
+                            (self.generated_data.c.user_id == user_id)
+                            & (self.generated_data.c.status == 1)
+                            & (self.generated_data.c.hidden == 0)
+                        )
+                        .order_by(self.generated_data.c.id.desc())
                     )
 
                 response = connection.execute(select_query).fetchall()
