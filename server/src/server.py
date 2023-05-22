@@ -4,10 +4,17 @@
 
 import logging
 import time
+import re
 
 from typing import Annotated
 
-from fastapi import BackgroundTasks, FastAPI, Header, UploadFile, Form
+from fastapi import (
+    BackgroundTasks,
+    FastAPI,
+    Header,
+    UploadFile,
+    Form,
+)
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
@@ -74,10 +81,11 @@ app.add_middleware(
 DESCRIPTION = """
 Выпускной проект ОЦ VK в МГТУ команды Team Rattlesnake. Сервис, генерирующий
 контент для социальной сети ВКонтакте. Посты генерируются сами с помощью
-нейросетей, также можно сократить, удлинить, продолжить, перефразировать
-текст и заменить часть текста. Представляет собой VK MiniAPP, который удобно
-использовать и с компьютера, и со смартфона. Станьте популярным в сети с помощью
-Strawberry!
+искуственного интеллекта, также можно сократить, удлинить, продолжить, перефразировать
+текст и заменить часть текста. Наше приложение - VK MiniAPP, который удобно
+использовать и с компьютера, и со смартфона.
+
+Хочешь вкусный пост? Попробуй Strawberry!
 
 * Коленков Андрей - Team Lead, Backend Python Dev 🍓
 * Роман Медников - Frontend React Dev, ChatGPT Enthusiast, Perplexity Enthusiast 🍓
@@ -85,7 +93,7 @@ Strawberry!
 
 Наш паблик: [Strawberry - Помощник в ведении сообщества](https://vk.com/strawberry_ai)
 
-Приложение работает: [Strawberry](https://vk.com/app51575840_226476923)
+Приложение работает: [Strawberry](https://vk.com/app51575840)
 """
 
 
@@ -765,7 +773,10 @@ def upload_file(
     logging.info(f"/upload {file.content_type}, {file.filename}")
     try:
         auth_data = parse_query_string(Authorization)
-        if not is_valid(query=auth_data, secret=config.client_secret):
+        pattern = re.compile("^https:\/\/.*\.vk\.com\/.*$")
+        if (not is_valid(query=auth_data, secret=config.client_secret)) or (
+            not pattern.match(upload_url)
+        ):
             return UploadFileResult(
                 status=1,
                 message="Authorization error",
@@ -788,16 +799,32 @@ def upload_file(
         )
 
     try:
-        if file.content_type in ["image/png", "image/jpeg", "image/gif"]:
+        if file.content_type in [
+            "image/png",
+            "image/jpeg",
+            "image/gif",
+        ]:
             response = requests.post(
                 upload_url,
-                files={"photo": (file.filename, file.file, file.content_type)},
+                files={
+                    "photo": (
+                        file.filename,
+                        file.file,
+                        file.content_type,
+                    )
+                },
                 timeout=30,
             )
         else:
             response = requests.post(
                 upload_url,
-                files={"file": (file.filename, file.file, file.content_type)},
+                files={
+                    "file": (
+                        file.filename,
+                        file.file,
+                        file.content_type,
+                    )
+                },
                 timeout=30,
             )
 

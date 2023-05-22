@@ -64,7 +64,7 @@ class NNApi:
                     len(source_texts_string) + len(text) + len(hint) + len(self.context)
                 ) >= MAX_WORDS_LEN:
                     continue
-                source_texts_string += f"Пост {i}: {text}\n\n"
+                source_texts_string += f"{i}. {text}\n\n"
                 i += 1
 
             if (
