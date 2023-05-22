@@ -105,7 +105,7 @@ def custom_openapi():
         return app.openapi_schema
     openapi_schema = get_openapi(
         title="Strawberry🍓",
-        version="1.6.0 - Clean Slate",
+        version="1.7.0 - Clean Slate",
         description=DESCRIPTION,
         routes=app.routes,
         contact={
