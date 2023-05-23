@@ -1,7 +1,7 @@
 name: CI
 on: [push]
 jobs:
-  Build-and-test:
+  Deploy:
     runs-on: ubuntu-22.04
     steps:
       - name: deploy
