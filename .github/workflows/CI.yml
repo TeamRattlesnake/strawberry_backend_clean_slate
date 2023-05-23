@@ -6,11 +6,10 @@ jobs:
     steps:
       - name: deploy
         run: |
-          sudo su
-          apt update -y
-          apt install openssh-client -y
-          mkdir -p ~/.ssh
-          eval $(ssh-agent -s)
-          echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
-          ssh-add <(echo "$SSH_PRIVATE_KEY")
-          ssh -o StrictHostKeyChecking=no root@66.150.64.139 -p 5829 './strawberry_bachup.sh'
+          sudo apt update
+          sudo apt install openssh-client
+          sudo mkdir -p ~/.ssh
+          sudo eval $(ssh-agent -s)
+          sudo echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+          sudo ssh-add <(echo "$SSH_PRIVATE_KEY")
+          sudo ssh -o StrictHostKeyChecking=no root@66.150.64.139 -p 5829 './strawberry_bachup.sh'
