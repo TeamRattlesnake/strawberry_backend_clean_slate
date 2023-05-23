@@ -11,6 +11,6 @@ jobs:
           mkdir -p ~/.ssh
           eval $(ssh-agent -s)
           echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
-          echo "$SSH_PRIVATE_KEY"
-          ssh-add <(echo "$SSH_PRIVATE_KEY")
+          echo "${{ secrets.SSH_PRIVATE_KEY }}"
+          ssh-add <(echo "${{ secrets.SSH_PRIVATE_KEY }}")
           ssh -o StrictHostKeyChecking=no root@66.150.64.139 -p 5829 './strawberry_bachup.sh'
