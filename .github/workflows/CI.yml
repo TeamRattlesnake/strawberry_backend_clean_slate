@@ -1,0 +1,15 @@
+name: CI
+on: [push]
+jobs:
+  Build-and-test:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: deploy
+      - run:  |
+      which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )
+      mkdir -p ~/.ssh
+      eval $(ssh-agent -s)
+      echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+      ssh-add <(echo "$SSH_PRIVATE_KEY")
+      ssh -o StrictHostKeyChecking=no root@66.150.64.139 -p 5829 './strawberry_bachup.sh'
+
