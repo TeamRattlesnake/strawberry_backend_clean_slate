@@ -33,6 +33,7 @@ class Config:
         self.summarize_context_path = data["summarize_context_path"]
         self.extend_context_path = data["extend_context_path"]
         self.unmask_context_path = data["unmask_context_path"]
+        self.fix_grammar_context_path = data["fix_grammar_context_path"]
 
         if len(data["api_tokens"]) == 0:
             raise Exception("No api tokens in config file")

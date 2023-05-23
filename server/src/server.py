@@ -79,10 +79,14 @@ app.add_middleware(
 )
 
 DESCRIPTION = """
-Выпускной проект ОЦ VK в МГТУ команды Team Rattlesnake. Сервис, генерирующий
+Выпускной проект ОЦ VK в МГТУ команды Team Rattlesnake.
+
+Сервис, генерирующий
 контент для социальной сети ВКонтакте. Посты генерируются сами с помощью
 искуственного интеллекта, также можно сократить, удлинить, продолжить, перефразировать
-текст и заменить часть текста. Наше приложение - VK MiniAPP, который удобно
+текст, заменить часть текста и исправить грамматические ошибки.
+
+ Наше приложение - VK MiniAPP, который удобно
 использовать и с компьютера, и со смартфона.
 
 Хочешь вкусный пост? Попробуй Strawberry!
@@ -479,6 +483,8 @@ def ask_nn(
             api.load_context(config.unmask_context_path)
         elif gen_method == "gen_from_scratch":
             api.load_context(config.gen_from_scratch_context_path)
+        elif gen_method == "fix_grammar":
+            api.load_context(config.fix_grammar_context_path)
 
         if (gen_method != "gen_from_scratch") and (hint == ""):
             raise NNException("Hint cannot be empty (unless it is gen_from_scratch)")
@@ -613,7 +619,8 @@ def generate(
 
     method - GenerationMethod, строка с описанием метода генерации.
     Доступные значения: "generate_text", "append_text", "rephrase_text",
-    "summarize_text", "extend_text", "unmask_text", gen_from_scratch
+    "summarize_text", "extend_text", "unmask_text", "gen_from_scratch",
+    "fix_grammar"
 
     context_data - list[str], список текстов существующих постов
     в паблике (лучше не менее 3-5 непустых текстов )
@@ -773,7 +780,7 @@ def upload_file(
     logging.info(f"/upload {file.content_type}, {file.filename}")
     try:
         auth_data = parse_query_string(Authorization)
-        pattern = re.compile("^https:\/\/.*\.vk\.com\/.*$")
+        pattern = re.compile(r"^https:\/\/.*\.vk\.com\/.*$")
         if (not is_valid(query=auth_data, secret=config.client_secret)) or (
             not pattern.match(upload_url)
         ):
