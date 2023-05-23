@@ -6,6 +6,7 @@ jobs:
     steps:
       - name: deploy
         run: |
+          sudo su
           apt update -y
           apt install openssh-client -y
           mkdir -p ~/.ssh
