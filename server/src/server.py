@@ -780,7 +780,7 @@ def upload_file(
     logging.info(f"/upload {file.content_type}, {file.filename}")
     try:
         auth_data = parse_query_string(Authorization)
-        pattern = re.compile(r"^https:\/\/.*\.vk\.com\/.*$")
+        pattern = re.compile(r"^https:\/\/pu\.vk\.com\/.*$")
         if (not is_valid(query=auth_data, secret=config.client_secret)) or (
             not pattern.match(upload_url)
         ):
