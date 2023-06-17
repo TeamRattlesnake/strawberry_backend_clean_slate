@@ -94,7 +94,13 @@ class NNApi:
         try:
             completion = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": self.query}],
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "Тебя зовут Strawberry, ты помогаешь писать посты в сообщества социальных сетей",
+                    },
+                    {"role": "user", "content": self.query},
+                ],
             )
             self.result = completion.choices[0].message.content
         except Exception as exc:
