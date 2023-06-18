@@ -4,10 +4,10 @@
 
 import openai
 
-MAX_WORDS_LEN = 2900
-NO_SOURCE_TEXTS_REPLACEMENT = (
-    "Старых постов в сообществе нет, так что придумай что-то креативное"
-)
+MAX_WORDS_LEN = 2800
+MIN_WORDS_LEN = 5
+SYSTEM_PROMPT = "Тебя зовут Strawberry, ты помогаешь писать посты в сообщества социальных сетей. Ты должен отвечать одним текстом поста для публикации"
+NO_SOURCE_TEXTS_REPLACEMENT = "Старых постов в сообществе нет, так что придумай что-то креативное"
 OLD_TEXTS_PLACEHOLDER = "[OLD_TEXTS]"
 HINT_PLACEHOLDER = "[HINT]"
 
@@ -60,16 +60,12 @@ class NNApi:
                 # Собираем строку с постами чтобы она была не длиннее, чем нужно.
                 # Считаю не количество слов, а количество букв потому что
                 # токенизатор не любит русский
-                if (
-                    len(source_texts_string) + len(text) + len(hint) + len(self.context)
-                ) >= MAX_WORDS_LEN:
+                if (len(source_texts_string) + len(text) + len(hint) + len(self.context)) >= MAX_WORDS_LEN:
                     continue
                 source_texts_string += f"{i}. {text}\n\n"
                 i += 1
 
-            if (
-                len(source_texts_string) > 3
-            ):  # Минимальная проверка на валидность контекста
+            if len(source_texts_string) > MIN_WORDS_LEN:  # Минимальная проверка на валидность контекста
                 self.query = self.context.replace(
                     OLD_TEXTS_PLACEHOLDER,
                     source_texts_string,
@@ -95,10 +91,7 @@ class NNApi:
             completion = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=[
-                    {
-                        "role": "system",
-                        "content": "Тебя зовут Strawberry, ты помогаешь писать посты в сообщества социальных сетей",
-                    },
+                    {"role": "system", "content": SYSTEM_PROMPT},
                     {"role": "user", "content": self.query},
                 ],
             )
