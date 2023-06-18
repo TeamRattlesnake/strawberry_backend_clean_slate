@@ -109,7 +109,7 @@ def custom_openapi():
         return app.openapi_schema
     openapi_schema = get_openapi(
         title="Strawberry🍓",
-        version="1.2.0 - Clean Slate",
+        version="1.1.0 - Clean Slate",
         description=DESCRIPTION,
         routes=app.routes,
         contact={
@@ -810,7 +810,7 @@ def upload_file(
                         file.content_type,
                     )
                 },
-                timeout=30,
+                timeout=45,
             )
         else:
             response = requests.post(
@@ -822,7 +822,7 @@ def upload_file(
                         file.content_type,
                     )
                 },
-                timeout=30,
+                timeout=45,
             )
 
         logging.info(f"/upload {file.content_type}, {file.filename}\tOK")
