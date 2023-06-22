@@ -288,7 +288,10 @@ class Database:
         try:
             with self.engine.connect() as connection:
                 select_query = select(self.generated_data.c.user_id).where(self.generated_data.c.id == text_id)
-                user_id_db = int(connection.execute(select_query).fetchall()[0][0])
+                try:
+                    user_id_db = int(connection.execute(select_query).fetchall()[0][0])
+                except IndexError:
+                    user_id_db = -1
                 return user_id == user_id_db
         except Exception as exc:
             raise DBException(f"Error in user_owns_post: {exc}") from exc
