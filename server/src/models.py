@@ -276,8 +276,70 @@ class UploadFileResult(BaseModel):
 
     message - str, текстовое описание статуса. Тут хранится текст
     исключения, если оно произошло
+
+    upload_result - str - ссылка на файл
     """
 
     status: int
     message: str
     upload_result: str
+
+
+class BalanceModel(BaseModel):
+    """
+    Модель с балансом пользователя
+
+    status - int, статус операции:
+    * 0 - OK
+    * 1 - VK API Auth error
+    * 2 - NN API error
+    * 3 - request error
+    * 4 - unknown error
+    * 5 - not implemented
+    * 6 - db error
+    * 7 - rate limit exceeded
+
+    message - str, текстовое описание статуса. Тут хранится текст
+    исключения, если оно произошло
+
+    balance - float - баланс пользователя
+    """
+
+    status: int
+    message: str
+    balance: float
+
+
+class RemainingUsesModel(BaseModel):
+    """
+    Модель с количеством оставшихся генераций
+
+    status - int, статус операции:
+    * 0 - OK
+    * 1 - VK API Auth error
+    * 2 - NN API error
+    * 3 - request error
+    * 4 - unknown error
+    * 5 - not implemented
+    * 6 - db error
+    * 7 - rate limit exceeded
+
+    message - str, текстовое описание статуса. Тут хранится текст
+    исключения, если оно произошло
+
+    uses - int - количество генераций
+    """
+
+    status: int
+    message: str
+    uses: int
+
+
+class AddBalanceModel(BaseModel):
+    """
+    Модель с суммой, которую надо добавить на баланс
+
+    added_amount - float - добавленная сумма
+    """
+
+    added_amount: float

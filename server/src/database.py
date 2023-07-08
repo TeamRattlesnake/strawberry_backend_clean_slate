@@ -86,7 +86,7 @@ class Database:
                 "user_id", Integer, ForeignKey("generated_data.user_id"), nullable=False
             ),
             Column("balance", Float, nullable=False, default=0.0),
-            Column("uses", Integer, nullable=False, default=0),
+            Column("uses", Integer, nullable=False, default=50),
         )
 
     def need_migration(self) -> bool:

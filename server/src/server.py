@@ -31,6 +31,9 @@ from models import (
     GenerateResult,
     UserResults,
     UploadFileResult,
+    BalanceModel,
+    RemainingUsesModel,
+    AddBalanceModel,
 )
 from config import Config
 from database import Database, DBException
@@ -755,3 +758,123 @@ def upload_file(
             message="Unknown error",
             upload_result="",
         )
+
+
+@app.get(
+    "/api/v1/payments/price_per_use",
+    response_model=BalanceModel,
+    tags=["Платежи"],
+)
+def price_per_use(
+    Authorization=Header(),
+):
+    """
+    Получение цены за одну генерацию (чтобы выставлять счет)
+    """
+    logging.info("/price_per_use")
+
+    if not auth_check(Authorization):
+        return BalanceModel(
+            status=1,
+            message="Authorization error",
+            balance=9999.0,  # На всякий случай
+        )
+
+    auth_data = parse_query_string(Authorization)
+
+    logging.info("/price_per_use\tOK")
+    return BalanceModel(
+        status=0,
+        message=f"Price returned for user {auth_data['vk_user_id']}",
+        balance=config.price_per_use,
+    )
+
+
+@app.get(
+    "/api/v1/payments/balance",
+    response_model=BalanceModel,
+    tags=["Платежи"],
+)
+def balance(
+    Authorization=Header(),
+):
+    """
+    Получить баланс для пользователя
+    """
+    logging.info("/balance")
+
+    if not auth_check(Authorization):
+        return BalanceModel(
+            status=1,
+            message="Authorization error",
+            balance=0.0,
+        )
+
+    auth_data = parse_query_string(Authorization)
+
+    logging.info("/balance\tOK")
+    return BalanceModel(
+        status=0,
+        message=f"User {auth_data['vk_user_id']} balance",
+        balance=10.0,
+    )
+
+
+@app.get(
+    "/api/v1/payments/remaining_uses",
+    response_model=RemainingUsesModel,
+    tags=["Платежи"],
+)
+def remaining_uses(
+    Authorization=Header(),
+):
+    """
+    Получить оставшиеся генерации пользователя
+    """
+    logging.info("/remaining_uses")
+
+    if not auth_check(Authorization):
+        return RemainingUsesModel(
+            status=1,
+            message="Authorization error",
+            uses=0,
+        )
+
+    auth_data = parse_query_string(Authorization)
+
+    logging.info("/remaining_uses\tOK")
+    return BalanceModel(
+        status=0,
+        message=f"User {auth_data['vk_user_id']} uses",
+        uses=9,
+    )
+
+
+@app.post(
+    "/api/v1/payments/add_balance",
+    response_model=SendFeedbackResult,
+    tags=["Платежи"],
+)
+def add_balance(
+    data: AddBalanceModel,
+    Authorization=Header(),
+):
+    """
+    Добавить баланс пользователю
+    """
+    logging.info("/add_balance")
+
+    if not auth_check(Authorization):
+        return SendFeedbackResult(
+            status=1,
+            message="Authorization error",
+        )
+
+    auth_data = parse_query_string(Authorization)
+    added_amount = data["added_amount"]
+
+    logging.info("/add_balance\tOK")
+    return SendFeedbackResult(
+        status=0,
+        message=f"OK, added {added_amount} for {auth_data['vk_user_id']}",
+    )
