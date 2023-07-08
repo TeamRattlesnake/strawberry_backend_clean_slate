@@ -8,7 +8,9 @@ from sqlalchemy import (
     Column,
     String,
     Integer,
+    Float,
     MetaData,
+    ForeignKey,
     inspect,
     select,
     update,
@@ -70,12 +72,31 @@ class Database:
             Column("hidden", Integer, nullable=False),
         )
 
+        self.users = Table(
+            "users",
+            self.meta,
+            Column(
+                "id",
+                Integer,
+                primary_key=True,
+                nullable=False,
+                autoincrement=True,
+            ),
+            Column(
+                "user_id", Integer, ForeignKey("generated_data.user_id"), nullable=False
+            ),
+            Column("balance", Float, nullable=False, default=0.0),
+            Column("uses", Integer, nullable=False, default=0),
+        )
+
     def need_migration(self) -> bool:
         """
         Проверяет, нужна ли миграция
         """
         try:
             if not inspect(self.engine).has_table("generated_data"):
+                return True
+            if not inspect(self.engine).has_table("users"):
                 return True
             return False
         except Exception as exc:
@@ -119,7 +140,8 @@ class Database:
                 connection.execute(insert_query)
 
                 get_id_query = select(self.generated_data.c.id).where(
-                    (self.generated_data.c.query == query) & (self.generated_data.c.unix_date == unix_date)
+                    (self.generated_data.c.query == query)
+                    & (self.generated_data.c.unix_date == unix_date)
                 )
 
                 text_id = int(connection.execute(get_id_query).fetchall()[0][0])
@@ -161,7 +183,9 @@ class Database:
         try:
             with self.engine.connect() as connection:
                 update_query = (
-                    update(self.generated_data).where(self.generated_data.c.id == text_id).values(rating=new_score)
+                    update(self.generated_data)
+                    .where(self.generated_data.c.id == text_id)
+                    .values(rating=new_score)
                 )
 
                 connection.execute(update_query)
@@ -175,7 +199,9 @@ class Database:
         try:
             with self.engine.connect() as connection:
                 update_query = (
-                    update(self.generated_data).where(self.generated_data.c.id == text_id).values(hidden=hidden)
+                    update(self.generated_data)
+                    .where(self.generated_data.c.id == text_id)
+                    .values(hidden=hidden)
                 )
 
                 connection.execute(update_query)
@@ -189,7 +215,9 @@ class Database:
         try:
             with self.engine.connect() as connection:
                 update_query = (
-                    update(self.generated_data).where(self.generated_data.c.id == text_id).values(published=1)
+                    update(self.generated_data)
+                    .where(self.generated_data.c.id == text_id)
+                    .values(published=1)
                 )
 
                 connection.execute(update_query)
@@ -206,7 +234,6 @@ class Database:
         """
         try:
             with self.engine.connect() as connection:
-
                 if group_id:
                     select_query = (
                         select(self.generated_data)
@@ -261,7 +288,9 @@ class Database:
         """
         try:
             with self.engine.connect() as connection:
-                get_status_query = select(self.generated_data.c.status).where(self.generated_data.c.id == text_id)
+                get_status_query = select(self.generated_data.c.status).where(
+                    self.generated_data.c.id == text_id
+                )
                 status = int(connection.execute(get_status_query).fetchall()[0][0])
 
                 return status
@@ -274,7 +303,9 @@ class Database:
         """
         try:
             with self.engine.connect() as connection:
-                get_text_query = select(self.generated_data.c.text).where(self.generated_data.c.id == text_id)
+                get_text_query = select(self.generated_data.c.text).where(
+                    self.generated_data.c.id == text_id
+                )
                 text = str(connection.execute(get_text_query).fetchall()[0][0])
 
                 return text
@@ -287,7 +318,9 @@ class Database:
         """
         try:
             with self.engine.connect() as connection:
-                select_query = select(self.generated_data.c.user_id).where(self.generated_data.c.id == text_id)
+                select_query = select(self.generated_data.c.user_id).where(
+                    self.generated_data.c.id == text_id
+                )
                 try:
                     user_id_db = int(connection.execute(select_query).fetchall()[0][0])
                 except IndexError:

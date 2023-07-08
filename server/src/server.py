@@ -144,6 +144,21 @@ def startup():
         raise Exception("Unknown error! Shutting down...") from exc
 
 
+def auth_check(Authorization: str) -> bool:
+    """Проверка авторизации и отлов всевозможных ошибок"""
+    try:
+        auth_data = parse_query_string(Authorization)
+        if not is_valid(query=auth_data, secret=config.client_secret):
+            return False
+    except UtilsException as exc:
+        logging.error(f"Error in utils, probably the request was not correct: {exc}")
+        return False
+    except Exception as exc:
+        logging.error(f"Unknown error: {exc}")
+        return False
+    return True
+
+
 @app.post(
     "/api/v1/post/{post_id}/like",
     response_model=SendFeedbackResult,
@@ -156,21 +171,14 @@ def send_like(post_id: int, Authorization=Header()):
     post_id - айди генерации, полученный из generate
 
     """
-    try:
-        auth_data = parse_query_string(Authorization)
-        if not is_valid(query=auth_data, secret=config.client_secret):
-            return SendFeedbackResult(status=1, message="Authorization error")
-    except UtilsException as exc:
-        logging.error(f"Error in utils, probably the request was not correct: {exc}")
-        return SendFeedbackResult(
-            status=3,
-            message="Error in utils, probably the request was not correct",
-        )
+    if not auth_check(Authorization):
+        return SendFeedbackResult(status=1, message="Authorization error")
 
     result_id = int(post_id)
 
     logging.info(f"/like\tid={result_id}")
 
+    auth_data = parse_query_string(Authorization)
     try:
         if not db.user_owns_post(auth_data["vk_user_id"], result_id):
             return SendFeedbackResult(status=1, message="Post is not yours")
@@ -198,21 +206,14 @@ def send_dislike(post_id: int, Authorization=Header()):
     post_id - айди генерации, полученный из generate
 
     """
-    try:
-        auth_data = parse_query_string(Authorization)
-        if not is_valid(query=auth_data, secret=config.client_secret):
-            return SendFeedbackResult(status=1, message="Authorization error")
-    except UtilsException as exc:
-        logging.error(f"Error in utils, probably the request was not correct: {exc}")
-        return SendFeedbackResult(
-            status=3,
-            message="Error in utils, probably the request was not correct",
-        )
+    if not auth_check(Authorization):
+        return SendFeedbackResult(status=1, message="Authorization error")
 
     result_id = int(post_id)
 
     logging.info(f"/dislike\tid={result_id}")
 
+    auth_data = parse_query_string(Authorization)
     try:
         if not db.user_owns_post(auth_data["vk_user_id"], result_id):
             return SendFeedbackResult(status=1, message="Post is not yours")
@@ -240,21 +241,14 @@ def send_hidden(post_id: int, Authorization=Header()):
     post_id - айди генерации, полученный из generate
 
     """
-    try:
-        auth_data = parse_query_string(Authorization)
-        if not is_valid(query=auth_data, secret=config.client_secret):
-            return SendFeedbackResult(status=1, message="Authorization error")
-    except UtilsException as exc:
-        logging.error(f"Error in utils, probably the request was not correct: {exc}")
-        return SendFeedbackResult(
-            status=3,
-            message="Error in utils, probably the request was not correct",
-        )
+    if not auth_check(Authorization):
+        return SendFeedbackResult(status=1, message="Authorization error")
 
     result_id = int(post_id)
 
     logging.info(f"/delete\tid={result_id}")
 
+    auth_data = parse_query_string(Authorization)
     try:
         if not db.user_owns_post(auth_data["vk_user_id"], result_id):
             return SendFeedbackResult(status=1, message="Post is not yours")
@@ -282,21 +276,14 @@ def send_recovered(post_id: int, Authorization=Header()):
     post_id - айди генерации, полученный из generate
 
     """
-    try:
-        auth_data = parse_query_string(Authorization)
-        if not is_valid(query=auth_data, secret=config.client_secret):
-            return SendFeedbackResult(status=1, message="Authorization error")
-    except UtilsException as exc:
-        logging.error(f"Error in utils, probably the request was not correct: {exc}")
-        return SendFeedbackResult(
-            status=3,
-            message="Error in utils, probably the request was not correct",
-        )
+    if not auth_check(Authorization):
+        return SendFeedbackResult(status=1, message="Authorization error")
 
     result_id = int(post_id)
 
     logging.info(f"/recover\tid={result_id}")
 
+    auth_data = parse_query_string(Authorization)
     try:
         if not db.user_owns_post(auth_data["vk_user_id"], result_id):
             return SendFeedbackResult(status=1, message="Post is not yours")
@@ -324,21 +311,14 @@ def send_published(post_id: int, Authorization=Header()):
     post_id - айди генерации, полученный из generate
 
     """
-    try:
-        auth_data = parse_query_string(Authorization)
-        if not is_valid(query=auth_data, secret=config.client_secret):
-            return SendFeedbackResult(status=1, message="Authorization error")
-    except UtilsException as exc:
-        logging.error(f"Error in utils, probably the request was not correct: {exc}")
-        return SendFeedbackResult(
-            status=3,
-            message="Error in utils, probably the request was not correct",
-        )
+    if not auth_check(Authorization):
+        return SendFeedbackResult(status=1, message="Authorization error")
 
     result_id = int(post_id)
 
     logging.info(f"/publish\tid={result_id}")
 
+    auth_data = parse_query_string(Authorization)
     try:
         if not db.user_owns_post(auth_data["vk_user_id"], result_id):
             return SendFeedbackResult(status=1, message="Post is not yours")
@@ -376,36 +356,20 @@ def get_history(
 
     offest - int, необязательное, смещение
     """
-
-    try:
-        auth_data = parse_query_string(Authorization)
-        if not is_valid(query=auth_data, secret=config.client_secret):
-            return UserResults(
-                status=1,
-                message="Authorization error",
-                data=[],
-                count=0,
-            )
-    except UtilsException as exc:
-        logging.error(f"Error in utils, probably the request was not correct: {exc}")
+    if not auth_check(Authorization):
         return UserResults(
-            status=3,
+            status=1,
             message="Authorization error",
             data=[],
             count=0,
         )
-    except Exception as exc:
-        logging.error(f"Unknown error: {exc}")
-        return UserResults(
-            status=1,
-            message="Unknown error",
-            data=[],
-            count=0,
-        )
 
+    auth_data = parse_query_string(Authorization)
     user_id = auth_data["vk_user_id"]
 
-    logging.info(f"/posts\tvk_user_id={user_id}; group_id={group_id}; offset={offset}; limit={limit}")
+    logging.info(
+        f"/posts\tvk_user_id={user_id}; group_id={group_id}; offset={offset}; limit={limit}"
+    )
 
     try:
         generated_results = db.get_users_texts(group_id, user_id)
@@ -414,7 +378,9 @@ def get_history(
             generated_results = generated_results[offset:]
         if limit:
             generated_results = generated_results[:limit]
-        logging.info(f"/posts\tvk_user_id={user_id}; group_id={group_id}; offset={offset}; limit={limit}\tOK")
+        logging.info(
+            f"/posts\tvk_user_id={user_id}; group_id={group_id}; offset={offset}; limit={limit}\tOK"
+        )
         return UserResults(
             status=0,
             message="Results returned",
@@ -452,7 +418,9 @@ def ask_nn(
 
     time_start = int(time.time())
 
-    logging.info(f"/{gen_method}\tlen(texts)={len(texts)}; hint[:20]={hint[:20]}; gen_id={gen_id}")
+    logging.info(
+        f"/{gen_method}\tlen(texts)={len(texts)}; hint[:20]={hint[:20]}; gen_id={gen_id}"
+    )
 
     token = None
 
@@ -500,7 +468,9 @@ def ask_nn(
 
         db.add_record_result(gen_id, result, time_elapsed)
 
-        logging.info(f"/{gen_method}\tlen(texts)={len(texts)}; hint[:20]={hint[:20]}; gen_id={gen_id}\tOK")
+        logging.info(
+            f"/{gen_method}\tlen(texts)={len(texts)}; hint[:20]={hint[:20]}; gen_id={gen_id}\tOK"
+        )
 
     except NNException as exc:
         logging.error(f"Error in NN API: {exc}\n")
@@ -523,29 +493,14 @@ def process_method(
     """
     Общий метод для обработки запроса на генерацию
     """
-    try:
-        auth_data = parse_query_string(Authorization)
-        if not is_valid(query=auth_data, secret=config.client_secret):
-            return GenerateID(
-                status=1,
-                message="Authorization error",
-                data=GenerateResultID(text_id=-1),
-            )
-    except UtilsException as exc:
-        logging.error(f"Error in utils, probably the request was not correct: {exc}")
+    if not auth_check(Authorization):
         return GenerateID(
-            status=3,
+            status=1,
             message="Authorization error",
             data=GenerateResultID(text_id=-1),
         )
-    except Exception as exc:
-        logging.error(f"Unknown error: {exc}")
-        return GenerateID(
-            status=4,
-            message="Unknown error",
-            data=GenerateResultID(text_id=-1),
-        )
 
+    auth_data = parse_query_string(Authorization)
     try:
         texts = data.context_data
         hint = data.hint
@@ -645,29 +600,14 @@ def get_status(text_id, Authorization=Header()):
     text_id - айди текста, выданный методом генерации
     """
     logging.info(f"/get_gen_status\ttext_id={text_id}")
-    try:
-        auth_data = parse_query_string(Authorization)
-        if not is_valid(query=auth_data, secret=config.client_secret):
-            return GenerateStatus(
-                status=1,
-                message="Authorization error",
-                data=GenerateResultStatus(text_status=-1),
-            )
-    except UtilsException as exc:
-        logging.error(f"Error in utils, probably the request was not correct: {exc}")
+    if not auth_check(Authorization):
         return GenerateStatus(
-            status=3,
+            status=1,
             message="Authorization error",
             data=GenerateResultStatus(text_status=-1),
         )
-    except Exception as exc:
-        logging.error(f"Unknown error: {exc}")
-        return GenerateStatus(
-            status=4,
-            message="Unknown error",
-            data=GenerateResultStatus(text_status=-1),
-        )
 
+    auth_data = parse_query_string(Authorization)
     try:
         if not db.user_owns_post(auth_data["vk_user_id"], text_id):
             return GenerateResultStatus(
@@ -705,29 +645,14 @@ def get_result(text_id, Authorization=Header()):
     text_id - айди текста, выданный методом генерации
     """
     logging.info(f"/get_gen_result\ttext_id={text_id}")
-    try:
-        auth_data = parse_query_string(Authorization)
-        if not is_valid(query=auth_data, secret=config.client_secret):
-            return GenerateResult(
-                status=1,
-                message="Authorization error",
-                data=GenerateResultStatus(text_status=-1),
-            )
-    except UtilsException as exc:
-        logging.error(f"Error in utils, probably the request was not correct: {exc}")
+    if not auth_check(Authorization):
         return GenerateResult(
-            status=3,
+            status=1,
             message="Authorization error",
             data=GenerateResultData(text_data=""),
         )
-    except Exception as exc:
-        logging.error(f"Unknown error: {exc}")
-        return GenerateResult(
-            status=4,
-            message="Unknown error",
-            data=GenerateResultData(text_data=""),
-        )
 
+    auth_data = parse_query_string(Authorization)
     try:
         if not db.user_owns_post(auth_data["vk_user_id"], text_id):
             return GenerateResult(
@@ -768,30 +693,20 @@ def upload_file(
     token - str, токен
     group_id - int, айди группы
     """
-
     logging.info(f"/upload {file.content_type}, {file.filename}")
-    try:
-        auth_data = parse_query_string(Authorization)
-        pattern = re.compile(r"^https:\/\/pu\.vk\.com\/.*$")
-        if (not is_valid(query=auth_data, secret=config.client_secret)) or (not pattern.match(upload_url)):
-            return UploadFileResult(
-                status=1,
-                message="Authorization error",
-                upload_result="",
-            )
 
-    except UtilsException as exc:
-        logging.error(f"Error in utils, probably the request was not correct: {exc}")
+    if not auth_check(Authorization):
         return UploadFileResult(
-            status=3,
+            status=1,
             message="Authorization error",
             upload_result="",
         )
-    except Exception as exc:
-        logging.error(f"Unknown error: {exc}")
+
+    pattern = re.compile(r"^https:\/\/pu\.vk\.com\/.*$")
+    if not pattern.match(upload_url):
         return UploadFileResult(
-            status=4,
-            message="Unknown error",
+            status=1,
+            message="URL Error?",
             upload_result="",
         )
 

@@ -26,6 +26,8 @@ class Config:
         self.db_host = data["db_host"]
         self.db_name = data["db_name"]
 
+        self.price_per_use = float(data["price_per_use"])
+
         self.gen_context_path = data["gen_context_path"]
         self.gen_from_scratch_context_path = data["gen_from_scratch_context_path"]
         self.append_context_path = data["append_context_path"]
