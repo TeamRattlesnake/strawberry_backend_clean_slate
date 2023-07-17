@@ -405,7 +405,9 @@ def get_history(
 
     user_id = auth_data["vk_user_id"]
 
-    logging.info(f"/posts\tvk_user_id={user_id}; group_id={group_id}; offset={offset}; limit={limit}")
+    logging.info(
+        f"/posts\tvk_user_id={user_id}; group_id={group_id}; offset={offset}; limit={limit}"
+    )
 
     try:
         generated_results = db.get_users_texts(group_id, user_id)
@@ -414,7 +416,9 @@ def get_history(
             generated_results = generated_results[offset:]
         if limit:
             generated_results = generated_results[:limit]
-        logging.info(f"/posts\tvk_user_id={user_id}; group_id={group_id}; offset={offset}; limit={limit}\tOK")
+        logging.info(
+            f"/posts\tvk_user_id={user_id}; group_id={group_id}; offset={offset}; limit={limit}\tOK"
+        )
         return UserResults(
             status=0,
             message="Results returned",
@@ -452,7 +456,9 @@ def ask_nn(
 
     time_start = int(time.time())
 
-    logging.info(f"/{gen_method}\tlen(texts)={len(texts)}; hint[:20]={hint[:20]}; gen_id={gen_id}")
+    logging.info(
+        f"/{gen_method}\tlen(texts)={len(texts)}; hint[:20]={hint[:20]}; gen_id={gen_id}"
+    )
 
     token = None
 
@@ -500,7 +506,9 @@ def ask_nn(
 
         db.add_record_result(gen_id, result, time_elapsed)
 
-        logging.info(f"/{gen_method}\tlen(texts)={len(texts)}; hint[:20]={hint[:20]}; gen_id={gen_id}\tOK")
+        logging.info(
+            f"/{gen_method}\tlen(texts)={len(texts)}; hint[:20]={hint[:20]}; gen_id={gen_id}\tOK"
+        )
 
     except NNException as exc:
         logging.error(f"Error in NN API: {exc}\n")
@@ -773,7 +781,9 @@ def upload_file(
     try:
         auth_data = parse_query_string(Authorization)
         pattern = re.compile(r"^https:\/\/pu\.vk\.com\/.*$")
-        if (not is_valid(query=auth_data, secret=config.client_secret)) or (not pattern.match(upload_url)):
+        if (not is_valid(query=auth_data, secret=config.client_secret)) or (
+            not pattern.match(upload_url)
+        ):
             return UploadFileResult(
                 status=1,
                 message="Authorization error",
