@@ -516,11 +516,11 @@ def ask_nn(
         elif gen_method == "fix_grammar":
             api.load_context(config.fix_grammar_context_path)
 
-        if (gen_method != "gen_from_scratch") and (hint == ""):
-            raise NNException("Hint cannot be empty (unless it is gen_from_scratch)")
-
         texts = [prepare_string(replace_stop_words(text)) for text in texts]
         hint = prepare_string(replace_stop_words(hint))
+
+        if (gen_method != "gen_from_scratch") and (hint == ""):
+            raise NNException("Hint cannot be empty (unless it is gen_from_scratch)")
 
         api.prepare_query(texts, hint)
 
