@@ -169,6 +169,12 @@ def send_like(post_id: int, Authorization=Header()):
 
     result_id = int(post_id)
 
+    if result_id <= 1:
+        return SendFeedbackResult(
+            status=3,
+            message="Incorrect post id",
+        )
+
     logging.info(f"/like\tid={result_id}")
 
     try:
@@ -210,6 +216,12 @@ def send_dislike(post_id: int, Authorization=Header()):
         )
 
     result_id = int(post_id)
+
+    if result_id <= 1:
+        return SendFeedbackResult(
+            status=3,
+            message="Incorrect post id",
+        )
 
     logging.info(f"/dislike\tid={result_id}")
 
@@ -253,6 +265,12 @@ def send_hidden(post_id: int, Authorization=Header()):
 
     result_id = int(post_id)
 
+    if result_id <= 1:
+        return SendFeedbackResult(
+            status=3,
+            message="Incorrect post id",
+        )
+
     logging.info(f"/delete\tid={result_id}")
 
     try:
@@ -295,6 +313,12 @@ def send_recovered(post_id: int, Authorization=Header()):
 
     result_id = int(post_id)
 
+    if result_id <= 1:
+        return SendFeedbackResult(
+            status=3,
+            message="Incorrect post id",
+        )
+
     logging.info(f"/recover\tid={result_id}")
 
     try:
@@ -336,6 +360,12 @@ def send_published(post_id: int, Authorization=Header()):
         )
 
     result_id = int(post_id)
+
+    if result_id <= 1:
+        return SendFeedbackResult(
+            status=3,
+            message="Incorrect post id",
+        )
 
     logging.info(f"/publish\tid={result_id}")
 
@@ -653,6 +683,14 @@ def get_status(text_id, Authorization=Header()):
     text_id - айди текста, выданный методом генерации
     """
     logging.info(f"/get_gen_status\ttext_id={text_id}")
+
+    if text_id <= 1:
+        return GenerateStatus(
+            status=3,
+            message="Incorrect post id",
+            data=GenerateResultStatus(text_status=-1),
+        )
+
     try:
         auth_data = parse_query_string(Authorization)
         if not is_valid(query=auth_data, secret=config.client_secret):
@@ -712,6 +750,14 @@ def get_result(text_id, Authorization=Header()):
 
     text_id - айди текста, выданный методом генерации
     """
+
+    if text_id <= 1:
+        return GenerateResult(
+            status=3,
+            message="Incorrect post id",
+            data=GenerateResultData(ext_data=""),
+        )
+
     logging.info(f"/get_gen_result\ttext_id={text_id}")
     try:
         auth_data = parse_query_string(Authorization)
@@ -719,7 +765,7 @@ def get_result(text_id, Authorization=Header()):
             return GenerateResult(
                 status=1,
                 message="Authorization error",
-                data=GenerateResultStatus(text_status=-1),
+                data=GenerateResultData(text_data=""),
             )
     except UtilsException as exc:
         logging.error(f"Error in utils, probably the request was not correct: {exc}")
