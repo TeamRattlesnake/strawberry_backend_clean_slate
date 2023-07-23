@@ -675,7 +675,7 @@ def generate(
     response_model=GenerateStatus,
     tags=["Генерация"],
 )
-def get_status(text_id, Authorization=Header()):
+def get_status(text_id: int, Authorization=Header()):
     """
     Возвращает статус генерации, 0 - не готово, 1 - готово,
     2 - ошибка
@@ -684,7 +684,7 @@ def get_status(text_id, Authorization=Header()):
     """
     logging.info(f"/get_gen_status\ttext_id={text_id}")
 
-    if text_id <= 1:
+    if int(text_id) <= 1:
         return GenerateStatus(
             status=3,
             message="Incorrect post id",
@@ -744,14 +744,14 @@ def get_status(text_id, Authorization=Header()):
     response_model=GenerateResult,
     tags=["Генерация"],
 )
-def get_result(text_id, Authorization=Header()):
+def get_result(text_id: int, Authorization=Header()):
     """
     Возвращает результат генерации по айди
 
     text_id - айди текста, выданный методом генерации
     """
 
-    if text_id <= 1:
+    if int(text_id) <= 1:
         return GenerateResult(
             status=3,
             message="Incorrect post id",
