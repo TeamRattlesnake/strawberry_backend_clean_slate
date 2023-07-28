@@ -545,6 +545,7 @@ def ask_nn(
         db.add_record_result(gen_id, "", 0, False)
     except DBException as exc:
         logging.error(f"Error in database: {exc}")
+        db.add_record_result(gen_id, "", 0, False)
     except Exception as exc:
         logging.error(f"Unknown error: {exc}")
         db.add_record_result(gen_id, "", 0, False)
