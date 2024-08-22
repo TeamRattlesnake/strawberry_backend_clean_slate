@@ -1,6 +1,7 @@
 """
 Модуль с моделями
 """
+
 from enum import Enum
 
 from pydantic import BaseModel
